@@ -1,5 +1,3 @@
-
-
-export default function MapView(){
-    return <div>지도</div>
+export default function MapView() {
+  return <div>지도</div>;
 }

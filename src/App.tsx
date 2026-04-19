@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 
 import routes from "./navigator/routes";

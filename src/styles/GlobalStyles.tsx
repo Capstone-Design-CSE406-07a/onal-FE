@@ -9,7 +9,7 @@ a {
   box-sizing: border-box;
 }
 body{
-  background-color: #d0d0d0;
+  background-color: #ffffff;
 }
 body, html, #root {
     height: 100%;
@@ -18,6 +18,7 @@ body, html, #root {
     font-family: "Pretendard";
   }
   #root {
+    width: 100%;
     max-width: 600px;
     margin: 0 auto;
     background-color: white;

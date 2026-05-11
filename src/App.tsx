@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import routes from "./navigator/routes";
 import GlobalStyles from "./styles/GlobalStyles";

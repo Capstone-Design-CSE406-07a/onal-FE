@@ -1,10 +1,8 @@
-import { useEffect, useRef } from "react";
-import mapboxgl from "mapbox-gl";
 import type { FeatureCollection, Point } from "geojson";
+import mapboxgl from "mapbox-gl";
+import { useEffect, useRef } from "react";
 
 import "mapbox-gl/dist/mapbox-gl.css";
-
-import { HeatmapLayer, MapSurface } from "./styles";
 
 const defaultCenter = { lat: 37.4979, lng: 127.0276 };
 
@@ -131,8 +129,8 @@ export default function MapHeatmap() {
   }, []);
 
   return (
-    <MapSurface>
-      <HeatmapLayer ref={mapContainerRef} data-heatmap="true" />
-    </MapSurface>
+    <div className="relative min-h-80 flex-1 overflow-hidden bg-[linear-gradient(114.4deg,rgba(190,211,238,0.05)_0%,rgba(190,211,238,0.1)_50%,rgba(190,211,238,0.05)_100%)]">
+      <div ref={mapContainerRef} data-heatmap="true" className="absolute inset-0" />
+    </div>
   );
 }

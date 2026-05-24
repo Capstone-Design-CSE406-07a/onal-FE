@@ -105,8 +105,20 @@
     @apply border-border outline-ring/50;
     box-sizing: border-box;
   }
+  html,
+  body,
+  #root {
+    @apply m-0 min-h-full p-0;
+    font-family: "Pretendard", system-ui, -apple-system, sans-serif;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white text-foreground;
+  }
+  #root {
+    @apply mx-auto w-full max-w-[600px] bg-white;
+  }
+  a {
+    @apply text-inherit no-underline;
   }
   html,
   body,

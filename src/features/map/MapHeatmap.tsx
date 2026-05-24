@@ -1,28 +1,15 @@
-import type { FeatureCollection, Point } from "geojson";
 import mapboxgl from "mapbox-gl";
 import { useEffect, useRef } from "react";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
-const defaultCenter = { lat: 37.4979, lng: 127.0276 };
-
-const heatmapPoints = [
-  { lat: 37.4979, lng: 127.0276, weight: 0.9 },
-  { lat: 37.505, lng: 127.021, weight: 0.7 },
-  { lat: 37.49, lng: 127.035, weight: 0.6 },
-];
-
-const heatmapGeoJson: FeatureCollection<Point, { weight: number }> = {
-  type: "FeatureCollection",
-  features: heatmapPoints.map((point) => ({
-    type: "Feature",
-    properties: { weight: point.weight },
-    geometry: {
-      type: "Point",
-      coordinates: [point.lng, point.lat] as [number, number],
-    },
-  })),
-};
+import {
+  buildHeatmapData,
+  DEFAULT_CENTER,
+  INTEREST_PLACES,
+  LAYER_CONFIG,
+  type LayerKey,
+} from "./constants";
 
 const heatmapSourceId = "heatmap-points";
 const heatmapLayerId = "heatmap-layer";
@@ -44,19 +31,33 @@ const applyKoreanLabels = (map: mapboxgl.Map) => {
     if (layer.type !== "symbol") {
       return;
     }
-
     const current = map.getLayoutProperty(layer.id, "text-field");
     if (!current) {
       return;
     }
-
     map.setLayoutProperty(layer.id, "text-field", koreanLabel);
   });
 };
 
-export default function MapHeatmap() {
+const buildRampExpression = (ramp: Array<[number, string]>): mapboxgl.Expression => {
+  const expr: unknown[] = ["interpolate", ["linear"], ["heatmap-density"]];
+  ramp.forEach(([stop, color]) => {
+    expr.push(stop, color);
+  });
+  return expr as mapboxgl.Expression;
+};
+
+type MapHeatmapProps = {
+  activeLayer: LayerKey;
+  timeOffset: number;
+  opacity: number;
+};
+
+export default function MapHeatmap({ activeLayer, timeOffset, opacity }: MapHeatmapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) {
@@ -73,7 +74,7 @@ export default function MapHeatmap() {
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/light-v11",
-      center: [defaultCenter.lng, defaultCenter.lat],
+      center: DEFAULT_CENTER,
       zoom: 11,
       minZoom: 6,
       maxBounds: koreaBounds,
@@ -85,15 +86,10 @@ export default function MapHeatmap() {
 
     map.on("load", () => {
       applyKoreanLabels(map);
-      if (map.getSource(heatmapSourceId)) {
-        return;
-      }
-
       map.addSource(heatmapSourceId, {
         type: "geojson",
-        data: heatmapGeoJson,
+        data: buildHeatmapData(activeLayer, timeOffset),
       });
-
       map.addLayer({
         id: heatmapLayerId,
         type: "heatmap",
@@ -102,35 +98,77 @@ export default function MapHeatmap() {
           "heatmap-weight": ["get", "weight"],
           "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 1, 9, 3],
           "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 12, 9, 36],
-          "heatmap-opacity": 0.8,
-          "heatmap-color": [
-            "interpolate",
-            ["linear"],
-            ["heatmap-density"],
-            0,
-            "rgba(0, 0, 0, 0)",
-            0.2,
-            "rgba(190, 211, 238, 0.4)",
-            0.5,
-            "rgba(190, 211, 238, 0.7)",
-            0.8,
-            "rgba(190, 211, 238, 0.9)",
-            1,
-            "rgba(190, 211, 238, 1)",
-          ],
+          "heatmap-opacity": opacity,
+          "heatmap-color": buildRampExpression(LAYER_CONFIG[activeLayer].ramp),
         },
       });
+
+      INTEREST_PLACES.forEach((place) => {
+        const el = document.createElement("div");
+        el.className =
+          "flex h-8 min-w-8 items-center gap-1 rounded-full border border-black/10 bg-white px-2 text-xs font-medium text-[#0a0a0a] shadow-[0_1px_3px_rgba(0,0,0,0.12)]";
+        el.innerHTML = `<span>${place.icon}</span><span>${place.name}</span>`;
+        const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+          .setLngLat(place.coordinates)
+          .addTo(map);
+        markersRef.current.push(marker);
+      });
+
+      loadedRef.current = true;
     });
 
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          map.flyTo({
+            center: [pos.coords.longitude, pos.coords.latitude],
+            zoom: 12,
+            essential: true,
+          });
+        },
+        () => {
+          // ignore; keep default center
+        },
+        { enableHighAccuracy: false, timeout: 4000 },
+      );
+    }
+
     return () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
       map.remove();
       mapRef.current = null;
+      loadedRef.current = false;
     };
+    // Initial map setup only — subsequent prop changes are handled by the effects below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !loadedRef.current) {
+      return;
+    }
+    const source = map.getSource(heatmapSourceId) as mapboxgl.GeoJSONSource | undefined;
+    source?.setData(buildHeatmapData(activeLayer, timeOffset));
+    map.setPaintProperty(
+      heatmapLayerId,
+      "heatmap-color",
+      buildRampExpression(LAYER_CONFIG[activeLayer].ramp),
+    );
+  }, [activeLayer, timeOffset]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !loadedRef.current) {
+      return;
+    }
+    map.setPaintProperty(heatmapLayerId, "heatmap-opacity", opacity);
+  }, [opacity]);
 
   return (
     <div className="relative min-h-80 flex-1 overflow-hidden bg-[linear-gradient(114.4deg,rgba(190,211,238,0.05)_0%,rgba(190,211,238,0.1)_50%,rgba(190,211,238,0.05)_100%)]">
-      <div ref={mapContainerRef} data-heatmap="true" className="absolute inset-0" />
+      <div ref={mapContainerRef} data-heatmap="true" className="h-full w-full" />
     </div>
   );
 }

@@ -1,4 +1,6 @@
-import { imgAlert, imgChat, imgDust, imgLocation, imgSun } from "./assets";
+import { AlertCircle } from "lucide-react";
+
+import { DustIcon, imgChat, imgLocation, SunIcon, TemperatureIcon } from "./assets";
 
 export default function TopInfoPanel() {
   return (
@@ -19,19 +21,19 @@ export default function TopInfoPanel() {
           </div>
 
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <MetricCard icon={imgDust} value="45" label="미세먼지" />
-            <MetricCard icon={imgSun} value="15°C" label="기온" />
-            <MetricCard icon={imgSun} value="5" label="자외선" />
+            <MetricCard icon={DustIcon} value="45" label="미세먼지" />
+            <MetricCard icon={TemperatureIcon} value="15°C" label="기온" />
+            <MetricCard icon={SunIcon} value="5" label="자외선" />
           </div>
         </div>
       </div>
 
-      <div className="flex items-start gap-2 rounded-[10px] border-[0.75px] border-[#d4183d]/20 bg-[#d4183d]/10 p-3 text-[#d4183d]">
-        <img src={imgAlert} alt="" className="h-4 w-4" />
-        <div className="flex flex-col gap-1 text-xs">
+      <div className="flex flex-col gap-1 rounded-[10px] border-[0.75px] border-[#d4183d]/20 bg-[#d4183d]/10 p-3 text-[#d4183d]">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           <strong className="text-sm font-medium">오늘 오후 미세먼지 나쁨</strong>
-          <span className="text-[#d4183d]/80">호흡기 민감군 주의 필요</span>
         </div>
+        <span className="ml-6 text-xs text-[#d4183d]/80">호흡기 민감군 주의 필요</span>
       </div>
     </div>
   );
@@ -46,7 +48,20 @@ type MetricCardProps = {
 function MetricCard({ icon, value, label }: MetricCardProps) {
   return (
     <div className="flex flex-col items-center gap-1 rounded-[10px] bg-[#e9f2fb]/50 py-3 text-center">
-      <img src={icon} alt="" className="h-5 w-5" />
+      <span
+        aria-hidden
+        className="h-5 w-5 bg-[#bed3ee]"
+        style={{
+          WebkitMaskImage: `url(${icon})`,
+          maskImage: `url(${icon})`,
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskPosition: "center",
+          maskPosition: "center",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+        }}
+      />
       <p className="m-0 text-sm font-medium text-[#0a0a0a]">{value}</p>
       <p className="m-0 text-xs text-[#717182]">{label}</p>
     </div>

@@ -20,7 +20,9 @@ export function StepIndicator({ current }: StepIndicatorProps) {
             <div
               className={cn(
                 "flex h-10 w-full items-center justify-center rounded-full text-base",
-                done || active ? "bg-primary text-primary-foreground" : "bg-gray-primary text-gray-dark opacity-50",
+                done || active
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-gray-primary text-gray-dark opacity-50",
                 active && "shadow-sm",
               )}
             >

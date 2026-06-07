@@ -1,13 +1,13 @@
 import {
+  ACTIVITY_LEVEL_SCORES,
+  AGE_GROUP_SCORES,
+  BODY_TYPE_SCORES,
+  WATER_INTAKE_SCORES,
   type ActivityEntry,
-  type AgeGroup,
-  type ActivityLevel,
-  type BodyType,
   type LocationEntry,
   type ScoreProfile,
   type SensitiveGroupKey,
   type TemperaturePreference,
-  type WaterIntake,
 } from "../constants";
 
 type EnrollPayload = {
@@ -31,11 +31,6 @@ const SENSITIVE_GROUP_LABEL: Record<SensitiveGroupKey, string> = {
   elderly: "노인",
 };
 
-const WATER_INTAKE_SCORE: Record<WaterIntake, number> = { low: 1, medium: 2, high: 3 };
-const BODY_TYPE_SCORE: Record<BodyType, number> = { slim: 1, normal: 2, overweight: 3 };
-const AGE_REPRESENTATIVE: Record<AgeGroup, number> = { teen: 15, adult: 25, middle: 45, senior: 65 };
-const ACTIVITY_LEVEL_SCORE: Record<ActivityLevel, number> = { none: 1, light: 2, intense: 3 };
-
 export function buildEnrollPayload(params: {
   sensitiveGroups: SensitiveGroupKey[];
   activities: ActivityEntry[];
@@ -45,6 +40,11 @@ export function buildEnrollPayload(params: {
 }): EnrollPayload {
   const { sensitiveGroups, activities, locations, tempPreference, scoreProfile } = params;
 
+  const bodyTypeScore =
+    scoreProfile.bodyType !== null && scoreProfile.currentTempFeeling !== null
+      ? BODY_TYPE_SCORES[scoreProfile.bodyType][scoreProfile.currentTempFeeling]
+      : null;
+
   return {
     sensivity: sensitiveGroups.map((key) => SENSITIVE_GROUP_LABEL[key]),
     activity_time: activities.map((a) => ({ type: a.label, time: a.time })),
@@ -53,10 +53,10 @@ export function buildEnrollPayload(params: {
     felt_temperature_10: tempPreference[10] ?? 4,
     felt_temperature_20: tempPreference[20] ?? 4,
     felt_temperature_30: tempPreference[30] ?? 4,
-    water_intake: scoreProfile.waterIntake !== null ? WATER_INTAKE_SCORE[scoreProfile.waterIntake] : null,
-    body_type: scoreProfile.bodyType !== null ? BODY_TYPE_SCORE[scoreProfile.bodyType] : null,
-    age: scoreProfile.ageGroup !== null ? AGE_REPRESENTATIVE[scoreProfile.ageGroup] : null,
-    activity_level: scoreProfile.activityLevel !== null ? ACTIVITY_LEVEL_SCORE[scoreProfile.activityLevel] : null,
+    water_intake: scoreProfile.waterIntake !== null ? WATER_INTAKE_SCORES[scoreProfile.waterIntake] : null,
+    body_type: bodyTypeScore,
+    age: scoreProfile.ageGroup !== null ? AGE_GROUP_SCORES[scoreProfile.ageGroup] : null,
+    activity_level: scoreProfile.activityLevel !== null ? ACTIVITY_LEVEL_SCORES[scoreProfile.activityLevel] : null,
   };
 }
 

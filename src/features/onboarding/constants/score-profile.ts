@@ -86,19 +86,27 @@ export const SCORE_QUESTIONS: QuestionConfig[] = [
 ];
 
 // 선택지 → 점수 변환
-const WATER_INTAKE_SCORES: Record<WaterIntake, number> = { low: 1, medium: 2, high: 3 };
-const BODY_TYPE_SCORES: Record<BodyType, number> = { slim: 1, normal: 2, overweight: 3 };
-const AGE_GROUP_SCORES: Record<AgeGroup, number> = { teen: 1, adult: 2, middle: 3, senior: 4 };
-const CURRENT_TEMP_SCORES: Record<CurrentTempFeeling, number> = { cold: 1, comfortable: 2, hot: 3 };
-const ACTIVITY_LEVEL_SCORES: Record<ActivityLevel, number> = { none: 1, light: 2, intense: 3 };
+export const WATER_INTAKE_SCORES: Record<WaterIntake, number> = { low: -8, medium: 0, high: 8 };
+
+export const BODY_TYPE_SCORES: Record<BodyType, Record<CurrentTempFeeling, number>> = {
+  slim:       { cold: -10, comfortable: 0,  hot: 5   },
+  normal:     { cold: 0,   comfortable: 5,  hot: 0   },
+  overweight: { cold: 5,   comfortable: 0,  hot: -10 },
+};
+
+export const AGE_GROUP_SCORES: Record<AgeGroup, number> = { teen: 0.8, adult: 1.0, middle: 1.2, senior: 1.5 };
+
+export const ACTIVITY_LEVEL_SCORES: Record<ActivityLevel, number> = { none: -5, light: 5, intense: -10 };
 
 export function toScorePayload(profile: ScoreProfile): ScoreProfilePayload {
   return {
     waterIntake: profile.waterIntake !== null ? WATER_INTAKE_SCORES[profile.waterIntake] : null,
-    bodyType: profile.bodyType !== null ? BODY_TYPE_SCORES[profile.bodyType] : null,
+    bodyType:
+      profile.bodyType !== null && profile.currentTempFeeling !== null
+        ? BODY_TYPE_SCORES[profile.bodyType][profile.currentTempFeeling]
+        : null,
     ageGroup: profile.ageGroup !== null ? AGE_GROUP_SCORES[profile.ageGroup] : null,
-    currentTempFeeling:
-      profile.currentTempFeeling !== null ? CURRENT_TEMP_SCORES[profile.currentTempFeeling] : null,
+    currentTempFeeling: null,
     activityLevel:
       profile.activityLevel !== null ? ACTIVITY_LEVEL_SCORES[profile.activityLevel] : null,
   };

@@ -1,8 +1,24 @@
+import { useEffect } from "react";
 import { Cloud, MapPin } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
+import { Button } from "@/shared/ui/button";
 import { Typography } from "@/shared/ui/typography";
 
 export function Login() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const status = searchParams.get("status");
+  const isLoginFailed = status === "LOGIN_FAIL";
+
+  useEffect(() => {
+    if (status === "USER_NOT_FOUND") {
+      navigate("/onboarding", { replace: true });
+    } else if (status === "LOGIN_SUCCESS") {
+      navigate("/", { replace: true });
+    }
+  }, [status, navigate]);
+
   const handleGoogleLogin = () => {
     window.location.href = `${import.meta.env.VITE_API_BASE_URL}/oauth/google`;
   };
@@ -34,14 +50,21 @@ export function Login() {
         {/* 로그인 카드 */}
         <div className="w-full rounded-[14px] border border-border bg-card px-6 py-6">
           <div className="flex flex-col gap-4">
-            <button
-              type="button"
+            {isLoginFailed && (
+              <Typography variant="caption" className="text-center text-red-500">
+                로그인에 실패했습니다. 다시 시도해 주세요.
+              </Typography>
+            )}
+            <Button
+              variant="secondary"
               onClick={handleGoogleLogin}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium tracking-[0.28px] text-primary-foreground transition-opacity hover:opacity-90 active:opacity-75"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-app-white border-2 transition-opacity"
             >
               <img src="/google.png" className="size-4" />
-              Google로 시작하기
-            </button>
+              <Typography variant="body2" className="text-primary-foreground">
+                Google로 시작하기
+              </Typography>
+            </Button>
 
             <div className="relative flex items-center">
               <div className="flex-1 border-t border-border" />

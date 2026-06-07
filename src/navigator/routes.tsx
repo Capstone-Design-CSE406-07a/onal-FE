@@ -1,5 +1,6 @@
-import Login from "../pages/Login";
+import { Login } from "../pages/Login";
 import MapView from "../pages/MapView";
+import { OauthCallback } from "../pages/OauthCallback";
 import { OnboardingPage } from "../pages/onboarding";
 
 const routes = [
@@ -17,6 +18,11 @@ const routes = [
   {
     path: "/login",
     element: <Login />,
+  },
+  // 구글 OAuth 콜백
+  {
+    path: "/oauth/google",
+    element: <OauthCallback />,
   },
 ];
 

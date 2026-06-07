@@ -2,12 +2,15 @@ import { useEffect } from "react";
 import { Cloud, MapPin } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import { getUser } from "@/shared/api/user";
+import { useUser } from "@/shared/contexts/use-user";
 import { Button } from "@/shared/ui/button";
 import { Typography } from "@/shared/ui/typography";
 
 export function Login() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { setUser } = useUser();
   const status = searchParams.get("status");
   const isLoginFailed = status === "LOGIN_FAIL";
 
@@ -15,9 +18,14 @@ export function Login() {
     if (status === "USER_NOT_FOUND") {
       navigate("/onboarding", { replace: true });
     } else if (status === "LOGIN_SUCCESS") {
-      navigate("/", { replace: true });
+      getUser()
+        .then((user) => {
+          setUser(user);
+          navigate("/", { replace: true });
+        })
+        .catch(() => navigate("/login?status=LOGIN_FAIL", { replace: true }));
     }
-  }, [status, navigate]);
+  }, [status, navigate, setUser]);
 
   const handleGoogleLogin = () => {
     window.location.href = `${import.meta.env.VITE_API_BASE_URL}/oauth/google`;

@@ -9,6 +9,7 @@ import { Step5ScoreProfile } from "../components/step5-score-profile";
 import { StepIndicator } from "../components/step-indicator";
 import { TEMP_REFERENCE_POINTS } from "../constants";
 import { useOnboardingState } from "../hooks/use-onboarding-state";
+import { useSubmitOnboarding } from "../hooks/use-submit-onboarding";
 
 export function OnboardingContainer() {
   const {
@@ -30,6 +31,8 @@ export function OnboardingContainer() {
     setScoreProfile,
   } = useOnboardingState();
 
+  const submitMutation = useSubmitOnboarding();
+
   if (completed) return <OnboardingComplete />;
 
   const nextDisabled = (() => {
@@ -40,6 +43,17 @@ export function OnboardingContainer() {
     if (step === 5) return Object.values(scoreProfile).some((v) => v === null);
     return false;
   })();
+
+  const handleNext = () => {
+    if (!isLast) {
+      next();
+      return;
+    }
+    submitMutation.mutate(
+      { sensitiveGroups, activities, locations, tempPreference, scoreProfile },
+      { onSuccess: next },
+    );
+  };
 
   return (
     <div className="flex min-h-full w-full justify-center bg-white">
@@ -61,9 +75,9 @@ export function OnboardingContainer() {
 
         <OnboardingNav
           onPrev={prev}
-          onNext={next}
+          onNext={handleNext}
           prevDisabled={isFirst}
-          nextDisabled={nextDisabled}
+          nextDisabled={nextDisabled || submitMutation.isPending}
           isLast={isLast}
         />
       </div>

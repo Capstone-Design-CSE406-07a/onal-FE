@@ -1,3 +1,5 @@
+import { apiClient } from "@/shared/api/client";
+
 import {
   ACTIVITY_LEVEL_SCORES,
   AGE_GROUP_SCORES,
@@ -61,13 +63,8 @@ export function buildEnrollPayload(params: {
 }
 
 export async function postEnroll(payload: EnrollPayload): Promise<void> {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL as string;
-  const res = await fetch(`${baseUrl}/user/enroll`, {
+  await apiClient("/user/enroll", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    throw new Error(`enroll failed: ${res.status}`);
-  }
 }

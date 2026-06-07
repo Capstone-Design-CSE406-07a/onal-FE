@@ -1,15 +1,17 @@
-import mapboxgl from "mapbox-gl";
 import { useEffect, useRef } from "react";
+import type { FeatureCollection, Point } from "geojson";
+import mapboxgl from "mapbox-gl";
 
-import "mapbox-gl/dist/mapbox-gl.css";
+import "mapbox-gl/mapbox-gl.css";
 
 import {
   buildHeatmapData,
   DEFAULT_CENTER,
-  INTEREST_PLACES,
   LAYER_CONFIG,
+  type InterestPlace,
   type LayerKey,
 } from "./constants";
+import { applyScoresToHeatmap, type LayerScore } from "./personalization";
 
 const heatmapSourceId = "heatmap-points";
 const heatmapLayerId = "heatmap-layer";
@@ -47,13 +49,37 @@ const buildRampExpression = (ramp: Array<[number, string]>): mapboxgl.Expression
   return expr as mapboxgl.Expression;
 };
 
+const createMarkerElement = (place: InterestPlace) => {
+  const el = document.createElement("div");
+  const icon = document.createElement("span");
+  const name = document.createElement("span");
+
+  el.className =
+    "flex h-8 min-w-8 items-center gap-1 rounded-full border border-black/10 bg-white px-2 text-xs font-medium text-[#0a0a0a] shadow-[0_1px_3px_rgba(0,0,0,0.12)]";
+  icon.textContent = place.icon;
+  name.textContent = place.name;
+  el.append(icon, name);
+
+  return el;
+};
+
 type MapHeatmapProps = {
   activeLayer: LayerKey;
   timeOffset: number;
   opacity: number;
+  interestPlaces: InterestPlace[];
+  layerScores: Record<LayerKey, LayerScore>;
+  geoJsonData?: FeatureCollection<Point, { weight: number }>;
 };
 
-export default function MapHeatmap({ activeLayer, timeOffset, opacity }: MapHeatmapProps) {
+export default function MapHeatmap({
+  activeLayer,
+  timeOffset,
+  opacity,
+  interestPlaces,
+  layerScores,
+  geoJsonData,
+}: MapHeatmapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -88,7 +114,11 @@ export default function MapHeatmap({ activeLayer, timeOffset, opacity }: MapHeat
       applyKoreanLabels(map);
       map.addSource(heatmapSourceId, {
         type: "geojson",
-        data: buildHeatmapData(activeLayer, timeOffset),
+        data: applyScoresToHeatmap(
+          geoJsonData ?? buildHeatmapData(activeLayer, timeOffset),
+          activeLayer,
+          layerScores,
+        ),
       });
       map.addLayer({
         id: heatmapLayerId,
@@ -103,12 +133,11 @@ export default function MapHeatmap({ activeLayer, timeOffset, opacity }: MapHeat
         },
       });
 
-      INTEREST_PLACES.forEach((place) => {
-        const el = document.createElement("div");
-        el.className =
-          "flex h-8 min-w-8 items-center gap-1 rounded-full border border-black/10 bg-white px-2 text-xs font-medium text-[#0a0a0a] shadow-[0_1px_3px_rgba(0,0,0,0.12)]";
-        el.innerHTML = `<span>${place.icon}</span><span>${place.name}</span>`;
-        const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+      interestPlaces.forEach((place) => {
+        const marker = new mapboxgl.Marker({
+          element: createMarkerElement(place),
+          anchor: "bottom",
+        })
           .setLngLat(place.coordinates)
           .addTo(map);
         markersRef.current.push(marker);
@@ -140,7 +169,7 @@ export default function MapHeatmap({ activeLayer, timeOffset, opacity }: MapHeat
       mapRef.current = null;
       loadedRef.current = false;
     };
-    // Initial map setup only — subsequent prop changes are handled by the effects below.
+    // Initial map setup only; subsequent prop changes are handled by the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -149,14 +178,37 @@ export default function MapHeatmap({ activeLayer, timeOffset, opacity }: MapHeat
     if (!map || !loadedRef.current) {
       return;
     }
+
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    interestPlaces.forEach((place) => {
+      const marker = new mapboxgl.Marker({ element: createMarkerElement(place), anchor: "bottom" })
+        .setLngLat(place.coordinates)
+        .addTo(map);
+      markersRef.current.push(marker);
+    });
+  }, [interestPlaces]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !loadedRef.current) {
+      return;
+    }
     const source = map.getSource(heatmapSourceId) as mapboxgl.GeoJSONSource | undefined;
-    source?.setData(buildHeatmapData(activeLayer, timeOffset));
+    source?.setData(
+      applyScoresToHeatmap(
+        geoJsonData ?? buildHeatmapData(activeLayer, timeOffset),
+        activeLayer,
+        layerScores,
+      ),
+    );
     map.setPaintProperty(
       heatmapLayerId,
       "heatmap-color",
       buildRampExpression(LAYER_CONFIG[activeLayer].ramp),
     );
-  }, [activeLayer, timeOffset]);
+  }, [activeLayer, geoJsonData, layerScores, timeOffset]);
 
   useEffect(() => {
     const map = mapRef.current;

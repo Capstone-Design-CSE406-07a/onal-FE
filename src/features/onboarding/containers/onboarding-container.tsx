@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import { OnboardingComplete } from "../components/onboarding-complete";
 import { OnboardingHeader } from "../components/onboarding-header";
 import { OnboardingNav } from "../components/onboarding-nav";
@@ -31,6 +33,7 @@ export function OnboardingContainer() {
     setScoreProfile,
   } = useOnboardingState();
 
+  const navigate = useNavigate();
   const submitMutation = useSubmitOnboarding();
 
   if (completed) return <OnboardingComplete />;
@@ -51,7 +54,7 @@ export function OnboardingContainer() {
     }
     submitMutation.mutate(
       { sensitiveGroups, activities, locations, tempPreference, scoreProfile },
-      { onSuccess: next },
+      { onSuccess: () => navigate("/", { replace: true }) },
     );
   };
 

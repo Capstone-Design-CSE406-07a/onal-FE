@@ -1,5 +1,6 @@
-import Login from "../pages/Login";
+import { Login } from "../pages/Login";
 import MapView from "../pages/MapView";
+import { OauthCallback } from "../pages/OauthCallback";
 
 const routes = [
   // 지도(메인)
@@ -11,6 +12,11 @@ const routes = [
   {
     path: "/login",
     element: <Login />,
+  },
+  // 구글 OAuth 콜백
+  {
+    path: "/oauth/google",
+    element: <OauthCallback />,
   },
 ];
 

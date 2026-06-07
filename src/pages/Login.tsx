@@ -1,5 +1,7 @@
 import { Cloud, MapPin } from "lucide-react";
 
+import { Typography } from "@/shared/ui/typography";
+
 export function Login() {
   const handleGoogleLogin = () => {
     window.location.href = `${import.meta.env.VITE_API_BASE_URL}/oauth/google`;
@@ -19,11 +21,13 @@ export function Login() {
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary">
             <Cloud className="h-10 w-10 text-primary-foreground" strokeWidth={1.5} />
           </div>
-          <div className="flex flex-col items-center gap-1.5">
-            <h1 className="text-[30px] font-semibold tracking-[0.6px] text-app-black">
+          <div className="flex flex-col items-center gap-1.5 text-center">
+            <Typography variant="h1" className="text-app-black">
               환경정보 앱
-            </h1>
-            <p className="text-base tracking-[0.32px] text-gray-dark">나만을 위한 맞춤 환경 정보</p>
+            </Typography>
+            <Typography variant="body1" className="text-gray-dark">
+              나만을 위한 맞춤 환경 정보
+            </Typography>
           </div>
         </div>
 
@@ -41,22 +45,28 @@ export function Login() {
 
             <div className="relative flex items-center">
               <div className="flex-1 border-t border-border" />
-              <span className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap bg-card px-3 text-xs tracking-[0.24px] text-gray-dark">
+              <Typography
+                variant="caption"
+                as="span"
+                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap bg-card px-3 text-gray-dark"
+              >
                 빠르고 간편하게
-              </span>
+              </Typography>
             </div>
 
-            <div className="flex items-center gap-2 text-sm tracking-[0.28px] text-gray-dark">
+            <div className="flex items-center gap-2 text-gray-dark">
               <MapPin className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-              <span>위치 기반 실시간 환경 정보 제공</span>
+              <Typography variant="body2" className="text-gray-dark">
+                위치 기반 실시간 환경 정보 제공
+              </Typography>
             </div>
           </div>
         </div>
 
         {/* 약관 안내 */}
-        <p className="text-center text-xs tracking-[0.24px] text-gray-dark">
+        <Typography variant="caption" className="text-center text-gray-dark">
           로그인하면 서비스 이용약관 및 개인정보처리방침에 동의하게 됩니다
-        </p>
+        </Typography>
       </div>
     </div>
   );

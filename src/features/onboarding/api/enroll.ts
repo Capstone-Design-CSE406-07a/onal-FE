@@ -55,10 +55,14 @@ export function buildEnrollPayload(params: {
     felt_temperature_10: tempPreference[10] ?? 4,
     felt_temperature_20: tempPreference[20] ?? 4,
     felt_temperature_30: tempPreference[30] ?? 4,
-    water_intake: scoreProfile.waterIntake !== null ? WATER_INTAKE_SCORES[scoreProfile.waterIntake] : null,
+    water_intake:
+      scoreProfile.waterIntake !== null ? WATER_INTAKE_SCORES[scoreProfile.waterIntake] : null,
     body_type: bodyTypeScore,
     age: scoreProfile.ageGroup !== null ? AGE_GROUP_SCORES[scoreProfile.ageGroup] : null,
-    activity_level: scoreProfile.activityLevel !== null ? ACTIVITY_LEVEL_SCORES[scoreProfile.activityLevel] : null,
+    activity_level:
+      scoreProfile.activityLevel !== null
+        ? ACTIVITY_LEVEL_SCORES[scoreProfile.activityLevel]
+        : null,
   };
 }
 

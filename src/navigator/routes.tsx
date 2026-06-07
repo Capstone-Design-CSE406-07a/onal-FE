@@ -1,3 +1,5 @@
+import { SettingsView } from "@/pages/SettingsView";
+
 import Login from "../pages/Login";
 import MapView from "../pages/MapView";
 
@@ -11,6 +13,11 @@ const routes = [
   {
     path: "/login",
     element: <Login />,
+  },
+  // 설정
+  {
+    path: "/setting",
+    element: <SettingsView />,
   },
 ];
 

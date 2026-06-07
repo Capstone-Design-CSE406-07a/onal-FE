@@ -1,7 +1,8 @@
 import { Check } from "lucide-react";
 
+import { Card, CardContent, CardHeader } from "@/shared/ui/card";
+import { Typography } from "@/shared/ui/typography";
 import { cn } from "@/shared/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 
 import { SENSITIVE_GROUPS, type SensitiveGroupKey } from "../constants";
 
@@ -17,13 +18,15 @@ export function Step1SensitiveGroup({ value, onChange }: Step1SensitiveGroupProp
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">민감군 선택</CardTitle>
+      <CardHeader className="">
+        <Typography variant="body1" className="font-semibold text-app-black">
+          민감군 선택
+        </Typography>
+        <Typography variant="body2" className="text-gray-dark">
+          건강 특성에 맞는 환경 정보를 제공해드립니다 (복수 선택 가능)
+        </Typography>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <p className="m-0 text-sm text-[#717182]">
-          건강 특성에 맞는 환경 정보를 제공해드립니다 (복수 선택 가능)
-        </p>
         <div className="flex flex-col gap-3">
           {SENSITIVE_GROUPS.map((group) => {
             const selected = value.includes(group.key);
@@ -34,18 +37,22 @@ export function Step1SensitiveGroup({ value, onChange }: Step1SensitiveGroupProp
                 onClick={() => toggle(group.key)}
                 className={cn(
                   "relative flex items-start gap-3 rounded-[10px] border-[1.5px] px-4 py-4 text-left",
-                  selected ? "border-[#bed3ee] bg-[#bed3ee]/5" : "border-black/10 bg-white",
+                  selected ? "border-primary bg-primary/5" : "border-black/10 bg-white",
                 )}
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#bed3ee]/10 text-lg">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-lg">
                   {group.emoji}
                 </span>
                 <div className="flex flex-1 flex-col gap-1">
-                  <span className="text-lg font-medium text-[#0a0a0a]">{group.title}</span>
-                  <span className="text-sm text-[#717182]">{group.description}</span>
+                  <Typography variant="body1" as="span" className="text-app-black">
+                    {group.title}
+                  </Typography>
+                  <Typography variant="body2" as="span" className="text-gray-dark">
+                    {group.description}
+                  </Typography>
                 </div>
                 {selected && (
-                  <span className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-[#bed3ee] text-[#1a3a52]">
+                  <span className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
                     <Check className="h-4 w-4" />
                   </span>
                 )}

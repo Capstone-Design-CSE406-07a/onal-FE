@@ -1,22 +1,25 @@
-export type TempLevelKey = "cold" | "cool" | "neutral" | "warm" | "hot";
+import type { TempScaleValue } from "@/shared/lib/temperature-interpolation";
 
-export type TempOption = { key: TempLevelKey; emoji: string; label: string };
+export type {
+  TempScaleValue,
+  TemperaturePreference,
+  TempReferencePoint,
+} from "@/shared/lib/temperature-interpolation";
+export { TEMP_REFERENCE_POINTS } from "@/shared/lib/temperature-interpolation";
 
-export const TEMP_OPTIONS: TempOption[] = [
-  { key: "cold", emoji: "🥶", label: "춥다" },
-  { key: "cool", emoji: "😊", label: "시원하다" },
-  { key: "neutral", emoji: "😌", label: "적당하다" },
-  { key: "warm", emoji: "😅", label: "따뜻하다" },
-  { key: "hot", emoji: "🥵", label: "덥다" },
-];
+type CircleConfig = {
+  value: TempScaleValue
+  twSize: string
+  borderColor: string
+  selectedBg: string
+}
 
-export type TempReferencePoint = { celsius: number; defaultKey: TempLevelKey };
-
-export const TEMP_REFERENCE_POINTS: TempReferencePoint[] = [
-  { celsius: 0, defaultKey: "cold" },
-  { celsius: 10, defaultKey: "cool" },
-  { celsius: 20, defaultKey: "warm" },
-  { celsius: 30, defaultKey: "hot" },
-];
-
-export type TemperaturePreference = Partial<Record<number, TempLevelKey>>;
+export const TEMP_CIRCLES: CircleConfig[] = [
+  { value: 1, twSize: 'size-9',  borderColor: 'border-[#9ABDE9]', selectedBg: 'bg-[#9ABDE9]/30' },
+  { value: 2, twSize: 'size-8',  borderColor: 'border-[#B0BBE2]', selectedBg: 'bg-[#B0BBE2]/30' },
+  { value: 3, twSize: 'size-6',  borderColor: 'border-[#C7B9DC]', selectedBg: 'bg-[#C7B9DC]/30' },
+  { value: 4, twSize: 'size-4',  borderColor: 'border-purple',    selectedBg: 'bg-purple/30'    },
+  { value: 5, twSize: 'size-6',  borderColor: 'border-[#E3A5B9]', selectedBg: 'bg-[#E3A5B9]/30' },
+  { value: 6, twSize: 'size-8',  borderColor: 'border-[#E9939D]', selectedBg: 'bg-[#E9939D]/30' },
+  { value: 7, twSize: 'size-9',  borderColor: 'border-red',       selectedBg: 'bg-red/30'       },
+]

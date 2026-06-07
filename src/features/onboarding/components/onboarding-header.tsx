@@ -1,4 +1,5 @@
 import { Progress } from "@/shared/ui/progress";
+import { Typography } from "@/shared/ui/typography";
 
 import { TOTAL_STEPS } from "../constants";
 
@@ -11,12 +12,12 @@ export function OnboardingHeader({ step }: OnboardingHeaderProps) {
   return (
     <div className="flex w-full flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="m-0 text-2xl font-medium text-[#0a0a0a]">환경 설정</h2>
-        <span className="text-sm text-[#717182]">
+        <Typography variant="h2" className="text-app-black">환경 설정</Typography>
+        <Typography variant="body2" as="span" className="text-gray-dark">
           {step} / {TOTAL_STEPS}
-        </span>
+        </Typography>
       </div>
-      <Progress value={pct} className="h-3 bg-[#bed3ee]/20 [&>div]:bg-[#bed3ee]" />
+      <Progress value={pct} className="h-3 bg-primary/20 [&>div]:bg-primary" />
     </div>
   );
 }

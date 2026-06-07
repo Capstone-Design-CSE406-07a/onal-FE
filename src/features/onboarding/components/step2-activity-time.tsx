@@ -1,12 +1,13 @@
-import { Clock, Plus, X } from "lucide-react";
 import { useState } from "react";
+import { Clock, Plus, X } from "lucide-react";
 
 import { Button } from "@/shared/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { TimePicker } from "@/shared/ui/time-picker";
+import { Typography } from "@/shared/ui/typography";
 
 import { ACTIVITY_PRESETS, MAX_ACTIVITIES, type ActivityEntry } from "../constants";
 
@@ -61,15 +62,18 @@ export function Step2ActivityTime({ value, onChange }: Step2ActivityTimeProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">활동 시간대</CardTitle>
+        <Typography variant="body1" className="font-semibold text-app-black">
+          활동 시간대
+        </Typography>
+        <Typography variant="body2" className="text-gray-dark">
+          외출·이동 시간대를 등록하면 맞춤 예보를 제공합니다 (최대 {MAX_ACTIVITIES}개)
+        </Typography>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
-        <p className="m-0 text-sm text-[#717182]">
-          외출·이동 시간대를 등록하면 맞춤 예보를 제공합니다 (최대 {MAX_ACTIVITIES}개)
-        </p>
-
         <div className="flex flex-col gap-3">
-          <h4 className="m-0 text-sm font-medium text-[#0a0a0a]">프리셋</h4>
+          <Typography variant="body2" as="h4" className="font-medium text-app-black">
+            프리셋
+          </Typography>
           <div className="flex flex-wrap gap-2">
             {ACTIVITY_PRESETS.map((preset) => {
               const used = value.some((v) => v.label === preset.label);
@@ -96,19 +100,25 @@ export function Step2ActivityTime({ value, onChange }: Step2ActivityTimeProps) {
 
         {value.length > 0 && (
           <div className="flex flex-col gap-3">
-            <h4 className="m-0 text-sm font-medium text-[#0a0a0a]">등록된 시간대</h4>
+            <Typography variant="body2" as="h4" className="font-medium text-app-black">
+              등록된 시간대
+            </Typography>
             <div className="flex flex-col gap-3">
               {value.map((entry) => {
                 const notifyId = `notify-${entry.id}`;
                 return (
                   <div
                     key={entry.id}
-                    className="flex items-center gap-3 rounded-[10px] bg-[#e9f2fb]/50 p-3"
+                    className="flex items-center gap-3 rounded-[10px] bg-accent/50 p-3"
                   >
                     <div className="flex flex-1 flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-base font-medium text-[#0a0a0a]">{entry.label}</span>
-                        <span className="text-sm text-[#717182]">{entry.time}</span>
+                        <Typography variant="body1" as="span">
+                          {entry.label}
+                        </Typography>
+                        <Typography variant="body2" as="span" className="text-gray-dark">
+                          {entry.time}
+                        </Typography>
                       </div>
                       <div className="flex items-center gap-2">
                         <Switch
@@ -116,9 +126,9 @@ export function Step2ActivityTime({ value, onChange }: Step2ActivityTimeProps) {
                           checked={entry.notify}
                           onCheckedChange={() => toggleNotify(entry.id)}
                           aria-label="알림 토글"
-                          className="data-[state=checked]:bg-[#bed3ee]"
+                          className="data-[state=checked]:bg-primary"
                         />
-                        <Label htmlFor={notifyId} className="text-xs font-medium text-[#717182]">
+                        <Label htmlFor={notifyId} className="text-xs font-medium text-gray-dark">
                           알림 받기
                         </Label>
                       </div>
@@ -130,7 +140,7 @@ export function Step2ActivityTime({ value, onChange }: Step2ActivityTimeProps) {
                       onClick={() => remove(entry.id)}
                       aria-label="삭제"
                     >
-                      <X className="h-4 w-4 text-[#717182]" />
+                      <X className="h-4 w-4 text-gray-dark" />
                     </Button>
                   </div>
                 );
@@ -164,7 +174,7 @@ export function Step2ActivityTime({ value, onChange }: Step2ActivityTimeProps) {
                 type="button"
                 onClick={addCustom}
                 disabled={!draftLabel.trim() || !draftTime.trim() || full}
-                className="flex-1 bg-[#bed3ee] text-[#1a3a52] hover:bg-[#bed3ee]/90"
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 추가
               </Button>

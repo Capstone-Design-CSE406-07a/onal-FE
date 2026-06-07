@@ -1,11 +1,12 @@
-import { Building, GraduationCap, Home, Hospital, MoreHorizontal, X } from "lucide-react";
 import { useState } from "react";
+import { Building, GraduationCap, Home, Hospital, MoreHorizontal, X } from "lucide-react";
 
-import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Typography } from "@/shared/ui/typography";
+import { cn } from "@/shared/lib/utils";
 
 import {
   LOCATION_ICON_OPTIONS,
@@ -52,26 +53,28 @@ export function Step3Locations({ value, onChange }: Step3LocationsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">관심 장소</CardTitle>
+        <Typography variant="body1" className="font-semibold text-app-black">
+          자주 방문하는 장소
+        </Typography>
+        <Typography variant="body2" className="text-gray-dark">
+          자주 방문하는 장소를 등록하여 해당 지점의 환경 정보를 확인하세요 (최대 {MAX_LOCATIONS}개)
+        </Typography>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
-        <p className="m-0 text-sm text-[#717182]">
-          자주 방문하는 장소를 등록하여 해당 지점의 환경 정보를 확인하세요 (최대 {MAX_LOCATIONS}개)
-        </p>
-
         {value.length > 0 && (
           <div className="flex flex-col gap-3">
             {value.map((entry) => (
-              <div
-                key={entry.id}
-                className="flex items-center gap-3 rounded-[10px] bg-[#e9f2fb]/50 p-4"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#bed3ee]/10 text-[#0a0a0a]">
+              <div key={entry.id} className="flex items-center gap-3 rounded-md bg-accent/50 p-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-app-black">
                   {renderLocationIcon(entry.icon)}
                 </span>
-                <div className="flex flex-1 flex-col">
-                  <span className="text-base font-medium text-[#0a0a0a]">{entry.name}</span>
-                  <span className="text-sm text-[#717182]">{entry.address}</span>
+                <div className="flex flex-1 flex-col gap-1">
+                  <Typography variant="body1" as="span" className="font-medium text-app-black">
+                    {entry.name}
+                  </Typography>
+                  <Typography variant="body2" as="span" className="text-gray-dark">
+                    {entry.address}
+                  </Typography>
                 </div>
                 <Button
                   type="button"
@@ -80,14 +83,14 @@ export function Step3Locations({ value, onChange }: Step3LocationsProps) {
                   onClick={() => remove(entry.id)}
                   aria-label="삭제"
                 >
-                  <X className="h-4 w-4 text-[#717182]" />
+                  <X className="h-4 w-4 text-gray-dark" />
                 </Button>
               </div>
             ))}
           </div>
         )}
 
-        <div className="flex flex-col gap-4 rounded-[10px] border border-black/10 p-4">
+        <div className="flex flex-col gap-4 rounded-md border border-black/10 p-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="location-name">장소명</Label>
             <Input
@@ -117,8 +120,8 @@ export function Step3Locations({ value, onChange }: Step3LocationsProps) {
                     type="button"
                     onClick={() => setDraftIcon(opt.key)}
                     className={cn(
-                      "flex h-17 flex-1 flex-col items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] text-xs font-medium text-[#0a0a0a]",
-                      selected ? "border-[#bed3ee] bg-[#bed3ee]/5" : "border-black/10 bg-white",
+                      "flex h-17 flex-1 flex-col items-center justify-center gap-1.5 rounded-md border-[1.5px] text-xs font-medium text-app-black",
+                      selected ? "border-primary bg-primary/5" : "border-black/10 bg-white",
                     )}
                   >
                     {renderLocationIcon(opt.key)}
@@ -132,7 +135,7 @@ export function Step3Locations({ value, onChange }: Step3LocationsProps) {
             <Button
               type="button"
               onClick={add}
-              className="flex-1 bg-[#bed3ee] text-[#1a3a52] hover:bg-[#bed3ee]/90"
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               추가
             </Button>

@@ -1,9 +1,11 @@
 import { useState } from "react";
 
 import {
+  INITIAL_SCORE_PROFILE,
   TOTAL_STEPS,
   type ActivityEntry,
   type LocationEntry,
+  type ScoreProfile,
   type SensitiveGroupKey,
   type TemperaturePreference,
 } from "../constants";
@@ -12,14 +14,16 @@ export type OnboardingState = ReturnType<typeof useOnboardingState>;
 
 export function useOnboardingState() {
   const [step, setStep] = useState(1);
+  const [completed, setCompleted] = useState(false);
   const [sensitiveGroups, setSensitiveGroups] = useState<SensitiveGroupKey[]>([]);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [locations, setLocations] = useState<LocationEntry[]>([]);
   const [tempPreference, setTempPreference] = useState<TemperaturePreference>({});
+  const [scoreProfile, setScoreProfile] = useState<ScoreProfile>(INITIAL_SCORE_PROFILE);
 
   const next = () => {
     if (step >= TOTAL_STEPS) {
-      // TODO: 데이터 연동 — 온보딩 완료 처리 / 메인 페이지 이동
+      setCompleted(true);
       return;
     }
     setStep(step + 1);
@@ -28,6 +32,7 @@ export function useOnboardingState() {
 
   return {
     step,
+    completed,
     isFirst: step === 1,
     isLast: step === TOTAL_STEPS,
     next,
@@ -40,5 +45,7 @@ export function useOnboardingState() {
     setLocations,
     tempPreference,
     setTempPreference,
+    scoreProfile,
+    setScoreProfile,
   };
 }

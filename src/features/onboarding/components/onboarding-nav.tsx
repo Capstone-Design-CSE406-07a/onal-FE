@@ -1,29 +1,39 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-
 import { Button } from "@/shared/ui/button";
 
 type OnboardingNavProps = {
   onPrev: () => void;
   onNext: () => void;
   prevDisabled?: boolean;
+  nextDisabled?: boolean;
   isLast?: boolean;
 };
 
-export function OnboardingNav({ onPrev, onNext, prevDisabled, isLast }: OnboardingNavProps) {
+export function OnboardingNav({
+  onPrev,
+  onNext,
+  prevDisabled,
+  nextDisabled,
+  isLast,
+}: OnboardingNavProps) {
   return (
-    <div className="flex w-full items-center justify-between">
-      <Button type="button" variant="outline" size="sm" onClick={onPrev} disabled={prevDisabled}>
-        <ChevronLeft className="h-4 w-4" />
-        <span>이전</span>
-      </Button>
+    <div className="flex w-full gap-3">
+      {!prevDisabled && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onPrev}
+          className="h-14 flex-1 rounded-xl text-base"
+        >
+          이전
+        </Button>
+      )}
       <Button
         type="button"
-        size="sm"
         onClick={onNext}
-        className="bg-[#bed3ee] text-[#1a3a52] hover:bg-[#bed3ee]/90"
+        disabled={nextDisabled}
+        className="h-14 flex-1 rounded-xl bg-primary text-base text-primary-foreground hover:bg-primary/90"
       >
-        <span>{isLast ? "완료" : "다음"}</span>
-        {!isLast && <ChevronRight className="h-4 w-4" />}
+        {isLast ? "완료" : "다음"}
       </Button>
     </div>
   );

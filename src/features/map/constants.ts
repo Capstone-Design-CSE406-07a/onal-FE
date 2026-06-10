@@ -118,6 +118,7 @@ export function buildHeatmapData(
 export type InterestPlace = {
   id: string;
   name: string;
+  dong?: string;
   coordinates: [number, number];
   icon: string;
 };

@@ -12,6 +12,7 @@ import {
   type LayerKey,
 } from "./constants";
 import { applyScoresToHeatmap, type LayerScore } from "./personalization";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 const heatmapSourceId = "heatmap-points";
 const heatmapLayerId = "heatmap-layer";
@@ -70,6 +71,8 @@ type MapHeatmapProps = {
   interestPlaces: InterestPlace[];
   layerScores: Record<LayerKey, LayerScore>;
   geoJsonData?: FeatureCollection<Point, { weight: number }>;
+  userCoords?: [number, number] | null;
+  locating?: boolean;
 };
 
 export default function MapHeatmap({
@@ -79,6 +82,8 @@ export default function MapHeatmap({
   interestPlaces,
   layerScores,
   geoJsonData,
+  userCoords,
+  locating = false,
 }: MapHeatmapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -146,22 +151,6 @@ export default function MapHeatmap({
       loadedRef.current = true;
     });
 
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          map.flyTo({
-            center: [pos.coords.longitude, pos.coords.latitude],
-            zoom: 12,
-            essential: true,
-          });
-        },
-        () => {
-          // ignore; keep default center
-        },
-        { enableHighAccuracy: false, timeout: 4000 },
-      );
-    }
-
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
@@ -218,9 +207,26 @@ export default function MapHeatmap({
     map.setPaintProperty(heatmapLayerId, "heatmap-opacity", opacity);
   }, [opacity]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !userCoords) {
+      return;
+    }
+    map.flyTo({ center: userCoords, zoom: 12, essential: true });
+  }, [userCoords]);
+
   return (
     <div className="relative min-h-80 flex-1 overflow-hidden bg-[linear-gradient(114.4deg,rgba(190,211,238,0.05)_0%,rgba(190,211,238,0.1)_50%,rgba(190,211,238,0.05)_100%)]">
       <div ref={mapContainerRef} data-heatmap="true" className="h-full w-full" />
+      {locating ? (
+        <div className="absolute inset-0 z-10 flex flex-col gap-3 bg-white/60 p-4 backdrop-blur-sm">
+          <Skeleton className="h-full w-full" />
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-medium text-gray-dark shadow-[0_1px_3px_rgba(0,0,0,0.12)]">
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            현재 위치를 불러오는 중…
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,8 +1,18 @@
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, SettingsIcon } from "lucide-react";
 
-import { DustIcon, imgChat, imgLocation, SunIcon, TemperatureIcon } from "./assets";
+import { Button } from "@/shared/ui/button";
+import { Skeleton } from "@/shared/ui/skeleton";
 
-export default function TopInfoPanel() {
+import { DustIcon, imgLocation, SunIcon, TemperatureIcon } from "./assets";
+import type { PersonalizedMapData } from "./personalization";
+
+type TopInfoPanelProps = {
+  data: PersonalizedMapData;
+  currentDong: string;
+  locatingDong?: boolean;
+};
+
+export default function TopInfoPanel({ currentDong, locatingDong = false }: TopInfoPanelProps) {
   return (
     <div className="relative flex w-full flex-col gap-3 px-3 pt-3 sm:gap-4 sm:px-4 sm:pt-4">
       <div className="rounded-[14px] border-[0.75px] border-black/10 bg-white p-px">
@@ -13,10 +23,19 @@ export default function TopInfoPanel() {
                 <img src={imgLocation} alt="" className="h-4 w-4" />
                 <span>현재 위치</span>
               </div>
-              <p className="m-0 text-xl/[28px] font-medium text-[#0a0a0a]">서울시 강남구</p>
+              {locatingDong ? (
+                <Skeleton className="h-7 w-32" />
+              ) : (
+                <p className="m-0 text-xl/[28px] font-medium text-[#0a0a0a]">{currentDong}</p>
+              )}
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg">
-              <img src={imgChat} alt="" className="h-4 w-4" />
+            <div className="flex h-8 items-center justify-center gap-4">
+              <Button>
+                <img src="/icons/main/chat.svg" alt="chat" className="h-4 w-4" />
+              </Button>
+              <Button>
+                <SettingsIcon className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 

@@ -9,6 +9,7 @@ import {
   buildTempHeatmap,
   buildUvHeatmap,
 } from "../features/map/heatmap-builder";
+import { useCurrentLocation } from "../features/map/hooks/use-current-location";
 import {
   usePmAtCenter,
   usePmNationwide,
@@ -30,6 +31,8 @@ export default function MapView() {
   const [activeLayer, setActiveLayer] = useState<LayerKey>("air");
   const [timeOffset, setTimeOffset] = useState(0);
   const [opacity, setOpacity] = useState(0.8);
+
+  const { coords: userCoords, dong: gpsDong, status: locationStatus } = useCurrentLocation();
 
   const { data: pmPoint } = usePmAtCenter();
   const { data: tempPoint } = useTempWind();
@@ -68,7 +71,11 @@ export default function MapView() {
   return (
     <div className="flex min-h-full w-full justify-center bg-white" data-node-id="42:1139">
       <div className="relative flex min-h-full w-full flex-col gap-3 bg-white">
-        <TopInfoPanel data={personalizedData} />
+        <TopInfoPanel
+          data={personalizedData}
+          currentDong={gpsDong ?? personalizedData.currentDong}
+          locatingDong={locationStatus === "locating"}
+        />
         <MapHeatmap
           activeLayer={activeLayer}
           timeOffset={timeOffset}
@@ -76,6 +83,8 @@ export default function MapView() {
           interestPlaces={interestPlaces}
           layerScores={personalizedData.layerScores}
           geoJsonData={geoJsonData}
+          userCoords={userCoords}
+          locating={locationStatus === "locating"}
         />
         <BottomControlsPanel
           activeLayer={activeLayer}
@@ -84,7 +93,6 @@ export default function MapView() {
           onOpacityChange={setOpacity}
           timeOffset={timeOffset}
           onTimeOffsetChange={setTimeOffset}
-          layerScores={personalizedData.layerScores}
         />
       </div>
     </div>

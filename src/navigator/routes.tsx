@@ -1,3 +1,4 @@
+import { ChatPage } from "../pages/chat";
 import { Login } from "../pages/Login";
 import MapView from "../pages/MapView";
 import { OauthCallback } from "../pages/OauthCallback";
@@ -13,6 +14,11 @@ const routes = [
   {
     path: "/onboarding",
     element: <OnboardingPage />,
+  },
+  // AI 질문(채팅)
+  {
+    path: "/chat",
+    element: <ChatPage />,
   },
   // 로그인
   {

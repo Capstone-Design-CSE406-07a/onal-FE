@@ -17,7 +17,11 @@ export function useAuthInit() {
     initialized.current = true;
     if (PUBLIC_PATHS.some((p) => pathname.startsWith(p)) || user !== null) return;
     getUser()
-      .then(setUser)
+      .then((nextUser) => {
+        setUser(nextUser);
+        // 온보딩 미완료 사용자는 온보딩으로 유도 (onboarding: true = 완료)
+        if (!nextUser.onboarding) navigate("/onboarding", { replace: true });
+      })
       .catch(() => navigate("/login", { replace: true }));
   }, [pathname, navigate, setUser, user]);
 }

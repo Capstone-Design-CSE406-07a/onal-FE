@@ -21,7 +21,7 @@ export function Login() {
       getUser()
         .then((user) => {
           setUser(user);
-          navigate("/", { replace: true });
+          navigate(user.onboarding ? "/" : "/onboarding", { replace: true });
         })
         .catch(() => navigate("/login?status=LOGIN_FAIL", { replace: true }));
     }

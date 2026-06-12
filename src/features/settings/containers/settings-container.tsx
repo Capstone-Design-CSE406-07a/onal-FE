@@ -56,7 +56,7 @@ export function SettingsContainer({
     >
       <SettingsHeader onBack={onBack} />
 
-      <div className="flex flex-col gap-3 px-4 pb-8 pt-[96px]">
+      <div className="flex flex-col gap-3 px-4 pb-24 pt-[96px]">
         <NotificationCard
           dustAlert={notifications.dustAlert}
           activityForecast={notifications.activityForecast}

@@ -70,7 +70,7 @@ export default function MapView() {
 
   return (
     <div className="flex min-h-full w-full justify-center bg-white" data-node-id="42:1139">
-      <div className="relative flex min-h-full w-full flex-col gap-3 bg-white">
+      <div className="relative flex min-h-full w-full flex-col gap-3 bg-white pb-24">
         <TopInfoPanel
           data={personalizedData}
           currentDong={gpsDong ?? personalizedData.currentDong}

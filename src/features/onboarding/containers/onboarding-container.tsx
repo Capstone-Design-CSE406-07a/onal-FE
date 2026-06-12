@@ -1,14 +1,17 @@
 import { useNavigate } from "react-router-dom";
 
+import {
+  ActivityTimeSelect,
+  LocationsSelect,
+  ScoreProfileSelect,
+  SensitiveGroupSelect,
+  TemperatureSelect,
+} from "@/shared/user-profile";
+
 import { OnboardingComplete } from "../components/onboarding-complete";
 import { OnboardingHeader } from "../components/onboarding-header";
 import { OnboardingNav } from "../components/onboarding-nav";
 import { StepIndicator } from "../components/step-indicator";
-import { Step1SensitiveGroup } from "../components/step1-sensitive-group";
-import { Step2ActivityTime } from "../components/step2-activity-time";
-import { Step3Locations } from "../components/step3-locations";
-import { Step4Temperature } from "../components/step4-temperature";
-import { Step5ScoreProfile } from "../components/step5-score-profile";
 import { TEMP_REFERENCE_POINTS } from "../constants";
 import { useOnboardingState } from "../hooks/use-onboarding-state";
 import { useSubmitOnboarding } from "../hooks/use-submit-onboarding";
@@ -65,12 +68,12 @@ export function OnboardingContainer() {
         <StepIndicator current={step} />
 
         {step === 1 && (
-          <Step1SensitiveGroup value={sensitiveGroups} onChange={setSensitiveGroups} />
+          <SensitiveGroupSelect value={sensitiveGroups} onChange={setSensitiveGroups} />
         )}
-        {step === 2 && <Step2ActivityTime value={activities} onChange={setActivities} />}
-        {step === 3 && <Step3Locations value={locations} onChange={setLocations} />}
-        {step === 4 && <Step4Temperature value={tempPreference} onChange={setTempPreference} />}
-        {step === 5 && <Step5ScoreProfile value={scoreProfile} onChange={setScoreProfile} />}
+        {step === 2 && <ActivityTimeSelect value={activities} onChange={setActivities} />}
+        {step === 3 && <LocationsSelect value={locations} onChange={setLocations} />}
+        {step === 4 && <TemperatureSelect value={tempPreference} onChange={setTempPreference} />}
+        {step === 5 && <ScoreProfileSelect value={scoreProfile} onChange={setScoreProfile} />}
 
         <OnboardingNav
           onPrev={prev}

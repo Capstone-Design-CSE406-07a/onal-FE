@@ -4,12 +4,12 @@ import { cn } from "@/shared/lib/utils";
 
 import { SCORE_QUESTIONS, type ScoreProfile } from "../constants";
 
-type Step5ScoreProfileProps = {
+type ScoreProfileSelectProps = {
   value: ScoreProfile;
   onChange: (next: ScoreProfile) => void;
 };
 
-export function Step5ScoreProfile({ value, onChange }: Step5ScoreProfileProps) {
+export function ScoreProfileSelect({ value, onChange }: ScoreProfileSelectProps) {
   function select(key: keyof ScoreProfile, optValue: string) {
     onChange({ ...value, [key]: optValue });
   }

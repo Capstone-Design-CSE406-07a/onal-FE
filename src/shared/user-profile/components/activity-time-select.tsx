@@ -14,12 +14,12 @@ import { ACTIVITY_PRESETS, MAX_ACTIVITIES, type ActivityEntry } from "../constan
 let activityIdCounter = 0;
 const nextActivityId = (label: string) => `activity-${label}-${++activityIdCounter}`;
 
-type Step2ActivityTimeProps = {
+type ActivityTimeSelectProps = {
   value: ActivityEntry[];
   onChange: (next: ActivityEntry[]) => void;
 };
 
-export function Step2ActivityTime({ value, onChange }: Step2ActivityTimeProps) {
+export function ActivityTimeSelect({ value, onChange }: ActivityTimeSelectProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [draftLabel, setDraftLabel] = useState("");
   const [draftTime, setDraftTime] = useState("");

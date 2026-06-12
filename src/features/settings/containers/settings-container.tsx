@@ -1,10 +1,16 @@
-import { ActivityTimeTab } from '../components/activity-time-tab'
-import { FavoritePlacesTab } from '../components/favorite-places-tab'
+import { Button } from '@/shared/ui/button'
+import {
+  ActivityTimeSelect,
+  LocationsSelect,
+  ScoreProfileSelect,
+  SensitiveGroupSelect,
+  TemperatureSelect,
+} from '@/shared/user-profile'
+
+import type { SettingsCardKey } from '../constants'
 import { NotificationCard } from '../components/notification-card'
-import { SensitiveGroupTab } from '../components/sensitive-group-tab'
 import { SettingsCollapsibleCard } from '../components/settings-collapsible-card'
 import { SettingsHeader } from '../components/settings-header'
-import { TemperatureTab } from '../components/temperature-tab'
 import type { UseSettingsStateReturn } from '../hooks/use-settings-state'
 
 const SENSITIVE_ICON = 'http://localhost:3845/assets/c469c8b9cf5522acfb595768d3949748f208ada9.svg'
@@ -22,23 +28,30 @@ export function SettingsContainer({
   toggleCard,
   notifications,
   toggleNotification,
-  selectedGroups,
-  toggleSensitiveGroup,
-  activityTimes,
-  addActivityTime,
-  removeActivityTime,
-  toggleActivityAlert,
-  favoritePlaces,
-  addFavoritePlace,
-  removeFavoritePlace,
-  temperaturePrefs,
-  setTemperatureFeeling,
+  sensitiveGroups,
+  setSensitiveGroups,
+  activities,
+  setActivities,
+  locations,
+  setLocations,
+  tempPreference,
+  setTempPreference,
+  scoreProfile,
+  setScoreProfile,
+  save,
+  isSaving,
 }: SettingsContainerProps) {
+  function handleSave(card: SettingsCardKey) {
+    save()
+    toggleCard(card)
+  }
+
   return (
     <div
       className="relative flex min-h-full w-full flex-col bg-white"
       style={{
-        background: 'linear-gradient(110.633deg, rgba(190,211,238,0.1) 0%, #fff 50%, rgba(190,211,238,0.05) 100%)',
+        background:
+          'linear-gradient(110.633deg, rgba(190,211,238,0.1) 0%, #fff 50%, rgba(190,211,238,0.05) 100%)',
       }}
     >
       <SettingsHeader onBack={onBack} />
@@ -62,11 +75,10 @@ export function SettingsContainer({
           isOpen={expandedCard === 'sensitive'}
           onToggle={() => toggleCard('sensitive')}
         >
-          <SensitiveGroupTab
-            selectedGroups={selectedGroups}
-            onToggle={toggleSensitiveGroup}
-            onSave={() => toggleCard('sensitive')}
-          />
+          <div className="flex flex-col gap-4">
+            <SensitiveGroupSelect value={sensitiveGroups} onChange={setSensitiveGroups} />
+            <SaveButton onClick={() => handleSave('sensitive')} isSaving={isSaving} />
+          </div>
         </SettingsCollapsibleCard>
 
         <SettingsCollapsibleCard
@@ -76,13 +88,10 @@ export function SettingsContainer({
           isOpen={expandedCard === 'activity'}
           onToggle={() => toggleCard('activity')}
         >
-          <ActivityTimeTab
-            activityTimes={activityTimes}
-            onAdd={addActivityTime}
-            onRemove={removeActivityTime}
-            onToggleAlert={toggleActivityAlert}
-            onSave={() => toggleCard('activity')}
-          />
+          <div className="flex flex-col gap-4">
+            <ActivityTimeSelect value={activities} onChange={setActivities} />
+            <SaveButton onClick={() => handleSave('activity')} isSaving={isSaving} />
+          </div>
         </SettingsCollapsibleCard>
 
         <SettingsCollapsibleCard
@@ -92,12 +101,10 @@ export function SettingsContainer({
           isOpen={expandedCard === 'places'}
           onToggle={() => toggleCard('places')}
         >
-          <FavoritePlacesTab
-            places={favoritePlaces}
-            onAdd={addFavoritePlace}
-            onRemove={removeFavoritePlace}
-            onSave={() => toggleCard('places')}
-          />
+          <div className="flex flex-col gap-4">
+            <LocationsSelect value={locations} onChange={setLocations} />
+            <SaveButton onClick={() => handleSave('places')} isSaving={isSaving} />
+          </div>
         </SettingsCollapsibleCard>
 
         <SettingsCollapsibleCard
@@ -107,11 +114,23 @@ export function SettingsContainer({
           isOpen={expandedCard === 'temperature'}
           onToggle={() => toggleCard('temperature')}
         >
-          <TemperatureTab
-            prefs={temperaturePrefs}
-            onSelect={setTemperatureFeeling}
-            onSave={() => toggleCard('temperature')}
-          />
+          <div className="flex flex-col gap-4">
+            <TemperatureSelect value={tempPreference} onChange={setTempPreference} />
+            <SaveButton onClick={() => handleSave('temperature')} isSaving={isSaving} />
+          </div>
+        </SettingsCollapsibleCard>
+
+        <SettingsCollapsibleCard
+          iconSrc={SENSITIVE_ICON}
+          title="종합 체감 프로파일"
+          description="더 정확한 맞춤 정보를 위한 추가 정보"
+          isOpen={expandedCard === 'score'}
+          onToggle={() => toggleCard('score')}
+        >
+          <div className="flex flex-col gap-4">
+            <ScoreProfileSelect value={scoreProfile} onChange={setScoreProfile} />
+            <SaveButton onClick={() => handleSave('score')} isSaving={isSaving} />
+          </div>
         </SettingsCollapsibleCard>
 
         <div className="mt-3 rounded-[14px] border border-black/10 bg-white p-px">
@@ -127,5 +146,22 @@ export function SettingsContainer({
         </div>
       </div>
     </div>
+  )
+}
+
+type SaveButtonProps = {
+  onClick: () => void
+  isSaving: boolean
+}
+
+function SaveButton({ onClick, isSaving }: SaveButtonProps) {
+  return (
+    <Button
+      onClick={onClick}
+      disabled={isSaving}
+      className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+    >
+      {isSaving ? '저장 중…' : '저장'}
+    </Button>
   )
 }

@@ -1,6 +1,2 @@
-export * from "./activity-presets";
-export * from "./locations";
-export * from "./score-profile";
-export * from "./sensitive-groups";
+export * from "@/shared/user-profile/constants";
 export * from "./steps";
-export * from "./temperature";

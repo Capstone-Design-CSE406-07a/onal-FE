@@ -1,7 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
 
-import { buildEnrollPayload, postEnroll } from "../api/enroll";
-import type { ActivityEntry, LocationEntry, ScoreProfile, SensitiveGroupKey, TemperaturePreference } from "../constants";
+import {
+  buildEnrollPayload,
+  postEnroll,
+  type ActivityEntry,
+  type LocationEntry,
+  type ScoreProfile,
+  type SensitiveGroupKey,
+  type TemperaturePreference,
+} from "@/shared/user-profile";
 
 type SubmitParams = {
   sensitiveGroups: SensitiveGroupKey[];

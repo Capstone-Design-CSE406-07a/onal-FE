@@ -18,12 +18,12 @@ import {
 let locationIdCounter = 0;
 const nextLocationId = () => `loc-${++locationIdCounter}`;
 
-type Step3LocationsProps = {
+type LocationsSelectProps = {
   value: LocationEntry[];
   onChange: (next: LocationEntry[]) => void;
 };
 
-export function Step3Locations({ value, onChange }: Step3LocationsProps) {
+export function LocationsSelect({ value, onChange }: LocationsSelectProps) {
   const [draftName, setDraftName] = useState("");
   const [draftAddress, setDraftAddress] = useState("");
   const [draftIcon, setDraftIcon] = useState<LocationIconKey>("home");

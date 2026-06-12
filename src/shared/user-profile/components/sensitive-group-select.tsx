@@ -6,12 +6,12 @@ import { cn } from "@/shared/lib/utils";
 
 import { SENSITIVE_GROUPS, type SensitiveGroupKey } from "../constants";
 
-type Step1SensitiveGroupProps = {
+type SensitiveGroupSelectProps = {
   value: SensitiveGroupKey[];
   onChange: (next: SensitiveGroupKey[]) => void;
 };
 
-export function Step1SensitiveGroup({ value, onChange }: Step1SensitiveGroupProps) {
+export function SensitiveGroupSelect({ value, onChange }: SensitiveGroupSelectProps) {
   const toggle = (key: SensitiveGroupKey) => {
     onChange(value.includes(key) ? value.filter((k) => k !== key) : [...value, key]);
   };

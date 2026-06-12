@@ -10,9 +10,9 @@ import {
   type ScoreProfile,
   type SensitiveGroupKey,
   type TemperaturePreference,
-} from "../constants";
+} from "./constants";
 
-type EnrollPayload = {
+export type EnrollPayload = {
   sensivity: string[];
   activity_time: { type: string; time: string }[];
   favorite_place: { name: string; dong: string }[];
@@ -26,7 +26,7 @@ type EnrollPayload = {
   activity_level: number | null;
 };
 
-const SENSITIVE_GROUP_LABEL: Record<SensitiveGroupKey, string> = {
+export const SENSITIVE_GROUP_LABEL: Record<SensitiveGroupKey, string> = {
   normal: "일반",
   respiratory: "천식/호흡기",
   infant: "영유아동반",

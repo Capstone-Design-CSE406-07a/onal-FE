@@ -9,12 +9,12 @@ import {
   type TempScaleValue,
 } from "../constants";
 
-type Step4TemperatureProps = {
+type TemperatureSelectProps = {
   value: TemperaturePreference;
   onChange: (next: TemperaturePreference) => void;
 };
 
-export function Step4Temperature({ value, onChange }: Step4TemperatureProps) {
+export function TemperatureSelect({ value, onChange }: TemperatureSelectProps) {
   function select(celsius: number, scale: TempScaleValue) {
     onChange({ ...value, [celsius]: scale });
   }

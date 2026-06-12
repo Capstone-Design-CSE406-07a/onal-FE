@@ -1,208 +1,220 @@
 import type { FeatureCollection, Point } from "geojson";
 
-import type { PmDataResponse, TempertureWindResponse, UvDataResponse } from "@/shared/api";
+import type {
+  PmNationwideItem,
+  TempWindNationwideItem,
+  UvNationwideItem,
+} from "@/shared/api/weather";
 
-import type { NationwideWeatherData } from "./hooks/use-nationwide-weather-data";
-import type { NearbyWeatherData } from "./hooks/use-nearby-weather-data";
-import type { LayerKey } from "./constants";
-
-export type HeatmapWeatherData = {
-  pm: PmDataResponse | null;
-  tempWind: TempertureWindResponse | null;
-  uv: UvDataResponse | null;
+// sigungu centroid lookup — key: "${sido}_${sigungu}"
+const SIGUNGU_COORDS: Record<string, [number, number]> = {
+  // 서울특별시 25구
+  "서울특별시_종로구": [126.9784, 37.5720],
+  "서울특별시_중구": [126.9979, 37.5633],
+  "서울특별시_용산구": [126.9647, 37.5326],
+  "서울특별시_성동구": [127.0370, 37.5633],
+  "서울특별시_광진구": [127.0822, 37.5397],
+  "서울특별시_동대문구": [127.0404, 37.5744],
+  "서울특별시_중랑구": [127.0938, 37.6066],
+  "서울특별시_성북구": [127.0171, 37.5894],
+  "서울특별시_강북구": [127.0114, 37.6398],
+  "서울특별시_도봉구": [127.0469, 37.6688],
+  "서울특별시_노원구": [127.0568, 37.6542],
+  "서울특별시_은평구": [126.9234, 37.6026],
+  "서울특별시_서대문구": [126.9361, 37.5791],
+  "서울특별시_마포구": [126.9019, 37.5663],
+  "서울특별시_양천구": [126.8587, 37.5170],
+  "서울특별시_강서구": [126.8495, 37.5509],
+  "서울특별시_구로구": [126.8885, 37.4954],
+  "서울특별시_금천구": [126.8956, 37.4566],
+  "서울특별시_영등포구": [126.8963, 37.5264],
+  "서울특별시_동작구": [126.9397, 37.5124],
+  "서울특별시_관악구": [126.9514, 37.4784],
+  "서울특별시_서초구": [127.0324, 37.4836],
+  "서울특별시_강남구": [127.0473, 37.5172],
+  "서울특별시_송파구": [127.1055, 37.5145],
+  "서울특별시_강동구": [127.1238, 37.5302],
+  // 부산광역시
+  "부산광역시_중구": [129.0300, 35.1061],
+  "부산광역시_서구": [129.0231, 35.0978],
+  "부산광역시_동구": [129.0435, 35.1294],
+  "부산광역시_영도구": [129.0658, 35.0885],
+  "부산광역시_부산진구": [129.0506, 35.1598],
+  "부산광역시_동래구": [129.0854, 35.2042],
+  "부산광역시_남구": [129.0798, 35.1367],
+  "부산광역시_북구": [129.0257, 35.1977],
+  "부산광역시_해운대구": [129.1649, 35.1631],
+  "부산광역시_사하구": [128.9724, 35.0999],
+  "부산광역시_금정구": [129.0926, 35.2442],
+  "부산광역시_강서구": [128.9047, 35.2123],
+  "부산광역시_연제구": [129.0825, 35.1762],
+  "부산광역시_수영구": [129.1128, 35.1452],
+  "부산광역시_사상구": [128.9924, 35.1496],
+  "부산광역시_기장군": [129.2219, 35.2440],
+  // 대구광역시
+  "대구광역시_중구": [128.5910, 35.8714],
+  "대구광역시_동구": [128.6417, 35.8867],
+  "대구광역시_서구": [128.5593, 35.8723],
+  "대구광역시_남구": [128.5974, 35.8511],
+  "대구광역시_북구": [128.5820, 35.8850],
+  "대구광역시_수성구": [128.6312, 35.8564],
+  "대구광역시_달서구": [128.5337, 35.8313],
+  "대구광역시_달성군": [128.4313, 35.7747],
+  // 인천광역시
+  "인천광역시_중구": [126.6217, 37.4738],
+  "인천광역시_동구": [126.6424, 37.4747],
+  "인천광역시_미추홀구": [126.6511, 37.4636],
+  "인천광역시_연수구": [126.6800, 37.4100],
+  "인천광역시_남동구": [126.7273, 37.4473],
+  "인천광역시_부평구": [126.7218, 37.5009],
+  "인천광역시_계양구": [126.7374, 37.5371],
+  "인천광역시_서구": [126.6760, 37.5448],
+  "인천광역시_강화군": [126.4869, 37.7416],
+  "인천광역시_옹진군": [126.6305, 37.5500],
+  // 광주광역시
+  "광주광역시_동구": [126.9230, 35.1399],
+  "광주광역시_서구": [126.8901, 35.1523],
+  "광주광역시_남구": [126.9026, 35.1268],
+  "광주광역시_북구": [126.9124, 35.1745],
+  "광주광역시_광산구": [126.7936, 35.1396],
+  // 대전광역시
+  "대전광역시_동구": [127.4547, 36.3121],
+  "대전광역시_중구": [127.4149, 36.3244],
+  "대전광역시_서구": [127.3837, 36.3551],
+  "대전광역시_유성구": [127.3565, 36.3622],
+  "대전광역시_대덕구": [127.4151, 36.3467],
+  // 울산광역시
+  "울산광역시_중구": [129.3243, 35.5690],
+  "울산광역시_남구": [129.3312, 35.5390],
+  "울산광역시_동구": [129.4166, 35.5052],
+  "울산광역시_북구": [129.3598, 35.5843],
+  "울산광역시_울주군": [129.2408, 35.5220],
+  // 세종특별자치시
+  "세종특별자치시_세종시": [127.2890, 36.4800],
+  // 경기도
+  "경기도_수원시 장안구": [127.0194, 37.2989],
+  "경기도_수원시 권선구": [127.0040, 37.2591],
+  "경기도_수원시 팔달구": [127.0080, 37.2814],
+  "경기도_수원시 영통구": [127.0467, 37.2687],
+  "경기도_성남시 수정구": [127.1443, 37.4467],
+  "경기도_성남시 중원구": [127.1413, 37.4310],
+  "경기도_성남시 분당구": [127.1219, 37.3837],
+  "경기도_고양시 덕양구": [126.8361, 37.6343],
+  "경기도_고양시 일산동구": [126.7727, 37.6547],
+  "경기도_고양시 일산서구": [126.7494, 37.6725],
+  "경기도_용인시 처인구": [127.2006, 37.2343],
+  "경기도_용인시 기흥구": [127.1134, 37.2760],
+  "경기도_용인시 수지구": [127.0571, 37.3223],
+  "경기도_부천시": [126.7831, 37.5035],
+  "경기도_안산시 단원구": [126.8220, 37.3219],
+  "경기도_안산시 상록구": [126.8540, 37.3055],
+  "경기도_안양시 만안구": [126.9248, 37.3960],
+  "경기도_안양시 동안구": [126.9489, 37.3897],
+  "경기도_남양주시": [127.2129, 37.6364],
+  "경기도_의정부시": [127.0340, 37.7382],
+  "경기도_평택시": [127.1122, 36.9920],
+  "경기도_시흥시": [126.8024, 37.3800],
+  "경기도_파주시": [126.7878, 37.7597],
+  "경기도_김포시": [126.7156, 37.6154],
+  "경기도_광주시": [127.2541, 37.4295],
+  "경기도_하남시": [127.2149, 37.5398],
+  "경기도_군포시": [126.9348, 37.3624],
+  "경기도_오산시": [127.0770, 37.1501],
+  "경기도_이천시": [127.4358, 37.2723],
+  "경기도_양주시": [127.0460, 37.7855],
+  "경기도_구리시": [127.1296, 37.5943],
+  "경기도_광명시": [126.8646, 37.4779],
+  "경기도_화성시": [126.8316, 37.1996],
+  "경기도_의왕시": [126.9689, 37.3447],
+  "경기도_과천시": [126.9879, 37.4292],
+  "경기도_동두천시": [127.0600, 37.9037],
+  "경기도_양평군": [127.4914, 37.4914],
+  "경기도_여주시": [127.6361, 37.2985],
+  "경기도_가평군": [127.5103, 37.8315],
+  "경기도_포천시": [127.2003, 37.8949],
+  "경기도_연천군": [127.0746, 38.0968],
 };
 
-type UrbanCluster = {
-  coords: [number, number];
-  sido: string;
-  sigungu: string;
-  density: number;
-};
+// deterministic scatter within sigungu — keeps same dong at same offset across re-renders
+function dongOffset(dong: string): [number, number] {
+  let h = 0;
+  for (let i = 0; i < dong.length; i++) {
+    h = (h * 31 + dong.charCodeAt(i)) & 0xffffff;
+  }
+  return [((h & 0xff) - 128) / 25000, (((h >> 8) & 0xff) - 128) / 25000];
+}
 
-const URBAN_CLUSTERS: UrbanCluster[] = [
-  { coords: [126.978, 37.5665], sido: "서울특별시", sigungu: "종로구", density: 1.0 },
-  { coords: [126.924, 37.527], sido: "서울특별시", sigungu: "구로구", density: 0.88 },
-  { coords: [127.028, 37.498], sido: "서울특별시", sigungu: "강남구", density: 0.92 },
-  { coords: [127.082, 37.538], sido: "서울특별시", sigungu: "송파구", density: 0.78 },
-  { coords: [126.868, 37.496], sido: "경기도", sigungu: "광명시", density: 0.82 },
-  { coords: [126.776, 37.456], sido: "경기도", sigungu: "부천시", density: 0.72 },
-  { coords: [126.92, 37.64], sido: "서울특별시", sigungu: "은평구", density: 0.65 },
-  { coords: [127.06, 37.63], sido: "서울특별시", sigungu: "노원구", density: 0.6 },
-  { coords: [127.14, 37.59], sido: "경기도", sigungu: "구리시", density: 0.55 },
-  { coords: [127.15, 37.43], sido: "경기도", sigungu: "하남시", density: 0.73 },
-  { coords: [126.902, 37.69], sido: "경기도", sigungu: "고양시", density: 0.5 },
-  { coords: [127.005, 37.43], sido: "경기도", sigungu: "과천시", density: 0.67 },
-  { coords: [126.72, 37.54], sido: "인천광역시", sigungu: "부평구", density: 0.58 },
-  { coords: [127.2, 37.59], sido: "경기도", sigungu: "남양주시", density: 0.45 },
-];
-
-// nationwide 배열에서 sido+sigungu로 항목 찾기
-function findEntry<T extends { sido: string; sigungu: string }>(
+function buildFeatures<T extends { sido: string; sigungu: string; dong: string }>(
   items: T[],
-  sido: string,
-  sigungu: string,
-): T | undefined {
-  return items.find((item) => item.sido === sido && item.sigungu === sigungu);
-}
-
-// 클러스터마다 안정적인 fallback 변동값
-function clusterVariation(index: number): number {
-  return 0.65 + 0.35 * Math.abs(Math.sin(index * 1.618));
-}
-
-function normalizeWeight(layer: LayerKey, pm: PmDataResponse | null, tempWind: TempertureWindResponse | null, uv: UvDataResponse | null): number {
-  switch (layer) {
-    case "air": {
-      const pm25W = Math.min(1, parseFloat(pm?.미세먼지 ?? "0") / 150);
-      const pm10W = Math.min(1, parseFloat(pm?.초미세먼지 ?? "0") / 75); // 75μg/m³ = 매우나쁨
-      // 통합대기환경지수: '1'=좋음 '2'=보통 '3'=나쁨 '4'=매우나쁨
-      const caiMap: Record<string, number> = { "1": 0.15, "2": 0.45, "3": 0.75, "4": 1.0 };
-      const caiW = caiMap[pm?.통합대기환경지수 ?? "1"] ?? 0.15;
-      return Math.min(1, (pm25W + pm10W + caiW) / 3);
-    }
-    case "temp": {
-      const val = parseFloat(tempWind?.기온 ?? "15");
-      return Math.min(1, Math.max(0, (val + 10) / 50));
-    }
-    case "uv": {
-      const val = uv?.uv ?? 0;
-      return Math.min(1, val / 11);
-    }
-    case "rain": {
-      const form = parseInt(tempWind?.강수형태 ?? "0");
-      const amount = parseFloat(tempWind?.["1시간강수량"] ?? "0");
-      const formWeight = form === 0 ? 0 : form <= 3 ? 0.6 : 0.3;
-      return Math.min(1, formWeight + amount / 20);
-    }
-    case "risk": {
-      const airW = normalizeWeight("air", pm, tempWind, uv);
-      const tempW = normalizeWeight("temp", pm, tempWind, uv);
-      const uvW = normalizeWeight("uv", pm, tempWind, uv);
-      const rainW = normalizeWeight("rain", pm, tempWind, uv);
-      return Math.min(1, (airW + tempW + uvW + rainW) / 4);
-    }
-    default:
-      return 0;
-  }
-}
-
-// nearby 항목 → 방향 정보가 없으므로 n등분 각도로 사용자 위치 주변에 배치
-// 1 km ≈ 0.009 deg (위도), 경도는 위도 cos 보정
-function nearbyItemsToPoints(
-  userCenter: [number, number],
-  nearby: NearbyWeatherData,
-  layer: LayerKey,
-  timeMod: number,
-): Array<[number, number, number]> {
-  const [userLng, userLat] = userCenter;
-  const KM_TO_DEG_LAT = 0.009;
-  const KM_TO_DEG_LNG = 0.009 / Math.cos((userLat * Math.PI) / 180);
-
-  // 세 배열의 길이 중 최댓값 기준으로 인덱스 순회
-  const len = Math.max(
-    nearby.pm?.length ?? 0,
-    nearby.tempWind?.length ?? 0,
-    nearby.uv?.length ?? 0,
-  );
-  if (len === 0) return [];
-
-  const points: Array<[number, number, number]> = [];
-
-  for (let i = 0; i < len; i++) {
-    const pmItem = nearby.pm?.[i] ?? null;
-    const twItem = nearby.tempWind?.[i] ?? null;
-    const uvItem = nearby.uv?.[i] ?? null;
-
-    const distKm = pmItem?.distance ?? twItem?.distance ?? uvItem?.distance ?? 1;
-    const angle = (2 * Math.PI * i) / len;
-
-    const lat = userLat + distKm * KM_TO_DEG_LAT * Math.sin(angle);
-    const lng = userLng + distKm * KM_TO_DEG_LNG * Math.cos(angle);
-
-    const pmData: PmDataResponse | null = pmItem
-      ? { 미세먼지: pmItem.미세먼지, 초미세먼지: pmItem.초미세먼지, 통합대기환경지수: pmItem.통합대기환경지수, 측정시간: pmItem.측정시간 }
-      : null;
-    const twData: TempertureWindResponse | null = twItem
-      ? { 기온: twItem.기온, 풍속: twItem.풍속, 풍향: twItem.풍향, 습도: twItem.습도, '1시간강수량': twItem['1시간강수량'], 강수형태: twItem.강수형태 }
-      : null;
-    const uvData: UvDataResponse | null = uvItem ? { uv: uvItem.uv } : null;
-
-    const raw = normalizeWeight(layer, pmData, twData, uvData);
-    const weight = Math.min(1, Math.max(0, raw * timeMod));
-    points.push([lng, lat, weight]);
-  }
-
-  return points;
-}
-
-// 포인트는 최소화 — Mapbox heatmap-density 누적 방지
-// 비대칭 오프셋 3개로 자연스러운 blob 형태 유지
-function generateClusterPoints(
-  center: [number, number],
-  weight: number,
-): Array<[number, number, number]> {
-  const [lng, lat] = center;
-  const spread = 0.012;
-  return [
-    [lng, lat, weight],
-    [lng + spread * 0.6, lat + spread * 0.2, weight * 0.7],
-    [lng - spread * 0.4, lat - spread * 0.5, weight * 0.7],
-    [lng + spread * 0.1, lat + spread * 0.65, weight * 0.6],
-  ];
-}
-
-export function buildHeatmapDataFromApi(
-  layer: LayerKey,
-  userCenter: [number, number],
-  localData: HeatmapWeatherData,
-  nationwide: NationwideWeatherData | null,
-  timeOffset: number,
-  nearby: NearbyWeatherData | null = null,
-): FeatureCollection<Point, { weight: number }> {
-  const timeMod = 1 + 0.15 * Math.sin((timeOffset / 12) * Math.PI);
-
-  const baseWeight = normalizeWeight(layer, localData.pm, localData.tempWind, localData.uv);
-  const userWeight = Math.min(1, Math.max(0, baseWeight * timeMod));
-
-  const allPoints: Array<[number, number, number]> = [];
-
-  // 수도권 도심 클러스터 — nationwide 데이터로 각 지역 실제 값 사용
-  URBAN_CLUSTERS.forEach((cluster, i) => {
-    let clusterWeight: number;
-
-    if (nationwide) {
-      const pmEntry = findEntry(nationwide.pm, cluster.sido, cluster.sigungu);
-      const twEntry = findEntry(nationwide.tempWind, cluster.sido, cluster.sigungu);
-      const uvEntry = findEntry(nationwide.uv, cluster.sido, cluster.sigungu);
-
-      if (pmEntry || twEntry || uvEntry) {
-        const raw = normalizeWeight(layer, pmEntry ?? null, twEntry ?? null, uvEntry ?? null);
-        clusterWeight = Math.min(1, Math.max(0, raw * timeMod));
-      } else {
-        clusterWeight = Math.min(1, userWeight * clusterVariation(i));
-      }
-    } else {
-      // nationwide 로딩 전: 전 지역 균등 분포 (사용자 위치 과강조 방지)
-      clusterWeight = Math.min(1, userWeight * clusterVariation(i));
-    }
-
-    allPoints.push(...generateClusterPoints(cluster.coords, clusterWeight));
+  weightFn: (item: T) => number,
+): FeatureCollection<Point, { weight: number }>["features"] {
+  return items.flatMap((item) => {
+    const base = SIGUNGU_COORDS[`${item.sido}_${item.sigungu}`];
+    if (!base) return [];
+    const [dLng, dLat] = dongOffset(item.dong);
+    return [
+      {
+        type: "Feature" as const,
+        properties: { weight: weightFn(item) },
+        geometry: { type: "Point" as const, coordinates: [base[0] + dLng, base[1] + dLat] },
+      },
+    ];
   });
+}
 
-  // 인근 지역 실측 데이터 — 있으면 클러스터 기반 추정값보다 우선 반영
-  if (nearby) {
-    allPoints.push(...nearbyItemsToPoints(userCenter, nearby, layer, timeMod));
-  }
+function toGeoJson(
+  features: FeatureCollection<Point, { weight: number }>["features"],
+): FeatureCollection<Point, { weight: number }> {
+  return { type: "FeatureCollection", features };
+}
 
-  // 사용자 위치 — 클러스터와 동일한 크기로 추가 (위치가 클러스터 목록에 없을 경우 보완)
-  allPoints.push(...generateClusterPoints(userCenter, userWeight));
+export function buildPmHeatmap(data: PmNationwideItem[]): FeatureCollection<Point, { weight: number }> {
+  return toGeoJson(
+    buildFeatures(data, (item) => {
+      const idx = parseInt(item.통합대기환경지수, 10);
+      return isNaN(idx) ? 0 : Math.min(1, (idx - 1) / 3);
+    }),
+  );
+}
 
-  return {
-    type: "FeatureCollection",
-    features: allPoints.map(([pLng, pLat, w]) => ({
-      type: "Feature",
-      properties: { weight: w },
-      geometry: { type: "Point", coordinates: [pLng, pLat] },
-    })),
-  };
+export function buildTempHeatmap(
+  data: TempWindNationwideItem[],
+): FeatureCollection<Point, { weight: number }> {
+  return toGeoJson(
+    buildFeatures(data, (item) => {
+      const temp = parseFloat(item.기온.replace("°C", ""));
+      return isNaN(temp) ? 0 : Math.min(1, Math.max(0, (temp + 20) / 60));
+    }),
+  );
+}
+
+export function buildUvHeatmap(data: UvNationwideItem[]): FeatureCollection<Point, { weight: number }> {
+  return toGeoJson(buildFeatures(data, (item) => Math.min(1, item.uv / 11)));
+}
+
+export function buildRainHeatmap(
+  data: TempWindNationwideItem[],
+): FeatureCollection<Point, { weight: number }> {
+  return toGeoJson(
+    buildFeatures(data, (item) => {
+      if (item.강수형태 === "0") return 0;
+      const mm = parseFloat(item["1시간강수량"].replace("mm", ""));
+      return isNaN(mm) ? 0.4 : Math.min(1, mm / 10 + 0.4);
+    }),
+  );
+}
+
+export function buildRiskHeatmap(
+  pmData: PmNationwideItem[],
+  uvData: UvNationwideItem[],
+): FeatureCollection<Point, { weight: number }> {
+  const uvByKey = new Map(uvData.map((u) => [`${u.sido}_${u.sigungu}_${u.dong}`, u.uv]));
+  return toGeoJson(
+    buildFeatures(pmData, (item) => {
+      const idx = parseInt(item.통합대기환경지수, 10);
+      const pmWeight = isNaN(idx) ? 0 : Math.min(1, (idx - 1) / 3);
+      const uv = uvByKey.get(`${item.sido}_${item.sigungu}_${item.dong}`) ?? 0;
+      return pmWeight * 0.6 + Math.min(1, uv / 11) * 0.4;
+    }),
+  );
 }

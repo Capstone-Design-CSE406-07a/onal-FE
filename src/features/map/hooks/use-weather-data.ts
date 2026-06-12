@@ -1,57 +1,41 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from "@tanstack/react-query";
 
-import { weatherApi } from '@/shared/api';
-import type { PmDataResponse, TempertureWindResponse, UvDataResponse } from '@/shared/api';
+import {
+  getPm,
+  getPmNationwide,
+  getTempWind,
+  getTempWindNationwide,
+  getUv,
+  getUvNationwide,
+} from "@/shared/api/weather";
+import { DEFAULT_CENTER } from "../constants";
 
-type WeatherData = {
-  pm: PmDataResponse | null;
-  tempWind: TempertureWindResponse | null;
-  uv: UvDataResponse | null;
-};
+const STALE_TIME = 5 * 60 * 1000;
 
-type UseWeatherDataReturn = WeatherData & {
-  isLoading: boolean;
-  error: Error | null;
-};
+export function usePmNationwide() {
+  return useQuery({ queryKey: ["weather", "pm", "nationwide"], queryFn: getPmNationwide, staleTime: STALE_TIME });
+}
 
-type Coords = { lat: number; lng: number };
+export function useTempWindNationwide() {
+  return useQuery({ queryKey: ["weather", "tempWind", "nationwide"], queryFn: getTempWindNationwide, staleTime: STALE_TIME });
+}
 
-export function useWeatherData(coords: Coords | null): UseWeatherDataReturn {
-  const [data, setData] = useState<WeatherData>({ pm: null, tempWind: null, uv: null });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export function useUvNationwide() {
+  return useQuery({ queryKey: ["weather", "uv", "nationwide"], queryFn: getUvNationwide, staleTime: STALE_TIME });
+}
 
-  useEffect(() => {
-    if (!coords) return;
+export function usePmAtCenter() {
+  return useQuery({
+    queryKey: ["weather", "pm", "center"],
+    queryFn: () => getPm(DEFAULT_CENTER[1], DEFAULT_CENTER[0]),
+    staleTime: STALE_TIME,
+  });
+}
 
-    let cancelled = false;
+export function useTempWind() {
+  return useQuery({ queryKey: ["weather", "tempWind"], queryFn: getTempWind, staleTime: STALE_TIME });
+}
 
-    const fetchAll = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const [pmRes, tempWindRes, uvRes] = await Promise.all([
-          weatherApi.getPm(coords),
-          weatherApi.getTemperatureWind(coords),
-          weatherApi.getUv(coords),
-        ]);
-        if (!cancelled) {
-          setData({ pm: pmRes.data, tempWind: tempWindRes.data, uv: uvRes.data });
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err : new Error('날씨 데이터를 불러오지 못했습니다.'));
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    fetchAll();
-    return () => {
-      cancelled = true;
-    };
-  }, [coords]);
-
-  return { ...data, isLoading, error };
+export function useUv() {
+  return useQuery({ queryKey: ["weather", "uv"], queryFn: getUv, staleTime: STALE_TIME });
 }

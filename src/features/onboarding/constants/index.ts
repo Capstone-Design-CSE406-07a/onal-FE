@@ -1,2 +1,2 @@
-export * from "@/shared/user-profile/constants";
+export * from "@/features/user-profile/constants";
 export * from "./steps";

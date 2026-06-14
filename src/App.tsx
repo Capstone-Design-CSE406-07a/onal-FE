@@ -1,8 +1,8 @@
 import { Route, Routes, useLocation } from "react-router-dom";
 
 import routes from "./navigator/routes";
-import { Navbar } from "./shared/Navbar";
 import { useAuthInit } from "./shared/hooks/use-auth-init";
+import { Navbar } from "./shared/ui/Navbar";
 
 const NAV_PATHS = ["/", "/setting"];
 

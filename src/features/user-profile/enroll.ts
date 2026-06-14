@@ -1,4 +1,5 @@
 import { apiClient } from "@/shared/api/client";
+import type { User } from "@/shared/api/user";
 
 import {
   ACTIVITY_LEVEL_SCORES,
@@ -69,6 +70,16 @@ export function buildEnrollPayload(params: {
 export async function postEnroll(payload: EnrollPayload): Promise<void> {
   await apiClient("/user/enroll", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// 마이페이지 수정 전용. 보낸 필드만 부분 업데이트되고, 업데이트된 전체 유저 객체를 반환한다.
+export type UserUpdatePayload = Partial<EnrollPayload & { onboarding: boolean }>;
+
+export async function putUserUpdate(payload: UserUpdatePayload): Promise<User> {
+  return apiClient<User>("/user/update", {
+    method: "PUT",
     body: JSON.stringify(payload),
   });
 }

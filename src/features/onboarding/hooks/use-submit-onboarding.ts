@@ -8,7 +8,7 @@ import {
   type ScoreProfile,
   type SensitiveGroupKey,
   type TemperaturePreference,
-} from "@/shared/user-profile";
+} from "@/features/user-profile";
 
 type SubmitParams = {
   sensitiveGroups: SensitiveGroupKey[];

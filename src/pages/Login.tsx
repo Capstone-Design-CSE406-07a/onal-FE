@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { Cloud, MapPin } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { getUser } from "@/shared/api/user";
-import { useUser } from "@/shared/contexts/use-user";
 import { Button } from "@/shared/ui/button";
 import { Typography } from "@/shared/ui/typography";
+import { getUser } from "@/shared/api/user";
+import { useUser } from "@/shared/contexts/use-user";
+import { setStoredEmail } from "@/shared/lib/auth-storage";
 
 export function Login() {
   const [searchParams] = useSearchParams();
@@ -21,6 +22,7 @@ export function Login() {
       getUser()
         .then((user) => {
           setUser(user);
+          setStoredEmail(user.email);
           navigate(user.onboarding ? "/" : "/onboarding", { replace: true });
         })
         .catch(() => navigate("/login?status=LOGIN_FAIL", { replace: true }));
@@ -47,7 +49,7 @@ export function Login() {
           </div>
           <div className="flex flex-col items-center gap-1.5 text-center">
             <Typography variant="h1" className="text-app-black">
-              환경정보 앱
+              ONAL
             </Typography>
             <Typography variant="body1" className="text-gray-dark">
               나만을 위한 맞춤 환경 정보

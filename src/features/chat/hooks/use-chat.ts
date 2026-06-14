@@ -5,11 +5,16 @@ import { postAskAgent } from "../api/ask-agent";
 import { AGENT_ERROR_MESSAGE, type ChatMessage } from "../constants";
 import { createMessage } from "../utils/create-message";
 
+type UseChatOptions = {
+  /** 현재 위치 추적으로 얻은 "OO시 OO구". 위치 확보 전이면 null. */
+  dong: string | null;
+};
+
 /**
  * AI 채팅 상태 관리 훅.
  * 사용자 메시지를 누적하고 `/ai-agent/question/agent`로 질문을 보내 답변을 받는다.
  */
-export function useChat() {
+export function useChat({ dong }: UseChatOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const appendMessage = useCallback((role: ChatMessage["role"], content: string) => {
@@ -17,7 +22,7 @@ export function useChat() {
   }, []);
 
   const mutation = useMutation({
-    mutationFn: (prompt: string) => postAskAgent({ prompt }),
+    mutationFn: (prompt: string) => postAskAgent({ prompt, dong: dong ?? "" }),
     onSuccess: (data) => appendMessage("assistant", data.answer),
     onError: () => appendMessage("assistant", AGENT_ERROR_MESSAGE),
   });

@@ -9,14 +9,14 @@ type NotificationRowProps = {
 
 function NotificationRow({ label, enabled, onToggle }: NotificationRowProps) {
   return (
-    <div className="flex h-11 items-center justify-between rounded-[10px] bg-[rgba(233,242,251,0.5)] px-3 py-3">
+    <div className="flex h-11 items-center justify-between rounded-[10px] bg-accent/50 px-3 py-3">
       <div className="flex items-center gap-3">
         <img src={ROW_ICON} alt="" className="size-4" />
-        <span className="text-sm text-[#0a0a0a]">{label}</span>
+        <span className="text-sm text-app-black">{label}</span>
       </div>
       <button
         onClick={onToggle}
-        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${enabled ? 'bg-[#bed3ee]' : 'bg-gray-200'}`}
+        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${enabled ? 'bg-primary' : 'bg-gray-200'}`}
       >
         <span
           className={`inline-block size-4 rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-4' : 'translate-x-0.5'}`}
@@ -38,12 +38,12 @@ export function NotificationCard({ dustAlert, activityForecast, emergencyAlert, 
     <div className="rounded-[14px] border border-black/10 bg-white p-px">
       <div className="flex flex-col gap-4 rounded-[13px] p-6">
         <div className="flex items-center gap-4">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(190,211,238,0.1)]">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-primary/10">
             <img src={BELL_ICON} alt="" className="size-5" />
           </div>
           <div>
-            <p className="text-[18px] font-medium tracking-tight text-[#0a0a0a]">알림 설정</p>
-            <p className="text-sm text-[#717182]">환경 정보 알림 수신 설정</p>
+            <p className="text-[18px] font-medium tracking-tight text-app-black">알림 설정</p>
+            <p className="text-sm text-gray-dark">환경 정보 알림 수신 설정</p>
           </div>
         </div>
         <div className="flex flex-col gap-3">

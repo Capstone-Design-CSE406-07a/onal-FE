@@ -28,7 +28,7 @@ export default function BottomControlsPanel({
       <div className="rounded-[14px] border-[0.75px] border-black/10 bg-white p-px">
         <div className="flex flex-col gap-3 p-3 sm:gap-4 sm:p-4">
           <section className="flex flex-col gap-2">
-            <p className="m-0 text-sm font-medium text-[#0a0a0a]">레이어 선택</p>
+            <p className="m-0 text-sm font-medium text-app-black">레이어 선택</p>
             <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 max-[360px]:flex-wrap max-[360px]:overflow-x-visible [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/10 [&::-webkit-scrollbar]:h-1">
               {LAYER_KEYS.map((key) => (
                 <LayerButton
@@ -44,8 +44,8 @@ export default function BottomControlsPanel({
 
           <section className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <p className="m-0 text-sm font-medium text-[#0a0a0a]">시간</p>
-              <p className="m-0 text-sm text-[#717182]">{timeLabel}</p>
+              <p className="m-0 text-sm font-medium text-app-black">시간</p>
+              <p className="m-0 text-sm text-gray-dark">{timeLabel}</p>
             </div>
             <input
               type="range"
@@ -55,9 +55,9 @@ export default function BottomControlsPanel({
               value={timeOffset}
               onChange={(e) => onTimeOffsetChange(Number(e.target.value))}
               aria-label="시간 슬라이더"
-              className="h-4 w-full accent-[#bed3ee]"
+              className="h-4 w-full accent-primary"
             />
-            <div className="flex justify-between text-[10px] text-[#717182]">
+            <div className="flex justify-between text-[10px] text-gray-dark">
               <span>-12h</span>
               <span>지금</span>
               <span>+12h</span>
@@ -66,8 +66,8 @@ export default function BottomControlsPanel({
 
           <section className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <p className="m-0 text-sm font-medium text-[#0a0a0a]">투명도</p>
-              <p className="m-0 text-sm text-[#717182]">{opacityPct}%</p>
+              <p className="m-0 text-sm font-medium text-app-black">투명도</p>
+              <p className="m-0 text-sm text-gray-dark">{opacityPct}%</p>
             </div>
             <input
               type="range"
@@ -77,7 +77,7 @@ export default function BottomControlsPanel({
               value={opacityPct}
               onChange={(e) => onOpacityChange(Number(e.target.value) / 100)}
               aria-label="히트맵 투명도"
-              className="h-4 w-full accent-[#bed3ee]"
+              className="h-4 w-full accent-primary"
             />
           </section>
         </div>
@@ -99,8 +99,8 @@ function LayerButton({ icon, label, active, onClick }: LayerButtonProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-[10px] border-[1.5px] border-black/10 bg-white px-2.5 py-2 text-xs font-medium whitespace-nowrap text-[#0a0a0a] sm:px-3 sm:text-sm",
-        active && "border-[#bed3ee] bg-[#bed3ee]/10 text-[#bed3ee]",
+        "inline-flex shrink-0 items-center gap-1.5 rounded-[10px] border-[1.5px] border-black/10 bg-white px-2.5 py-2 text-xs font-medium whitespace-nowrap text-app-black sm:px-3 sm:text-sm",
+        active && "border-primary bg-primary/10 text-primary",
       )}
     >
       <img src={icon} alt="" className="h-4 w-4" />

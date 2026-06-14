@@ -2,6 +2,7 @@ import { apiClient } from "@/shared/api/client";
 
 export type AskAgentRequest = {
   prompt: string;
+  dong: string;
 };
 
 export type AskAgentResponse = {

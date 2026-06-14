@@ -23,12 +23,12 @@ export function SettingsCollapsibleCard({
         onClick={onToggle}
         className="flex w-full items-center gap-4 rounded-[13px] px-6 py-6"
       >
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(190,211,238,0.1)]">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-primary/10">
           <img src={iconSrc} alt="" className="size-5 object-contain" />
         </div>
         <div className="flex-1 text-left">
-          <p className="text-[18px] font-medium tracking-tight text-[#0a0a0a]">{title}</p>
-          <p className="text-sm text-[#717182]">{description}</p>
+          <p className="text-[18px] font-medium tracking-tight text-app-black">{title}</p>
+          <p className="text-sm text-gray-dark">{description}</p>
         </div>
         <ChevronDown
           className={`size-5 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}

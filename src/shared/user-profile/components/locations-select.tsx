@@ -106,7 +106,7 @@ export function LocationsSelect({ value, onChange }: LocationsSelectProps) {
               id="location-address"
               value={draftAddress}
               onChange={(e) => setDraftAddress(e.target.value)}
-              placeholder="서울시 강남구..."
+              placeholder="ex) 서울특별시 강남구"
             />
           </div>
           <div className="flex flex-col gap-2">

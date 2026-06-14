@@ -20,6 +20,13 @@
   --purple:             #DDB7D5;
   --red:                #EF8181;
 
+  /* 체감온도 스케일(추움→더움). 중간/끝은 purple·red 토큰 재사용 */
+  --temp-cold:          #9ABDE9;
+  --temp-cool:          #B0BBE2;
+  --temp-mild:          #C7B9DC;
+  --temp-warm:          #E3A5B9;
+  --temp-hot:           #E9939D;
+
   /* ─── Shadcn UI compatibility ────────────────── */
   --background:         #FCFCFC;
   --foreground:         #0A0A0A;
@@ -98,6 +105,15 @@
   --color-app-white:          var(--app-white);
   --color-purple:             var(--purple);
   --color-red:                var(--red);
+  --color-temp-cold:          var(--temp-cold);
+  --color-temp-cool:          var(--temp-cool);
+  --color-temp-mild:          var(--temp-mild);
+  --color-temp-warm:          var(--temp-warm);
+  --color-temp-hot:           var(--temp-hot);
+
+  /* 핀/카드 그림자 */
+  --shadow-marker:        0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-marker-active: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 @layer base {

@@ -17,6 +17,7 @@
   --gray-dark:          #717182;
   --app-black:          #0A0A0A;
   --app-white:          #FCFCFC;
+  --app-bg:             #F0F4FA;
   --purple:             #DDB7D5;
   --red:                #EF8181;
 
@@ -103,6 +104,7 @@
   --color-gray-dark:          var(--gray-dark);
   --color-app-black:          var(--app-black);
   --color-app-white:          var(--app-white);
+  --color-app-bg:             var(--app-bg);
   --color-purple:             var(--purple);
   --color-red:                var(--red);
   --color-temp-cold:          var(--temp-cold);

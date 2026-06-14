@@ -6,7 +6,7 @@ import {
   ScoreProfileSelect,
   SensitiveGroupSelect,
   TemperatureSelect,
-} from "@/shared/user-profile";
+} from "@/features/user-profile";
 
 import { OnboardingComplete } from "../components/onboarding-complete";
 import { OnboardingHeader } from "../components/onboarding-header";
@@ -62,8 +62,8 @@ export function OnboardingContainer() {
   };
 
   return (
-    <div className="flex min-h-full w-full justify-center bg-white">
-      <div className="flex w-full max-w-[600px] flex-col gap-6 px-4 py-8">
+    <div className="flex min-h-full w-full justify-center bg-app-bg">
+      <div className="flex w-full max-w-150 flex-col gap-6 px-4 py-8">
         <OnboardingHeader step={step} />
         <StepIndicator current={step} />
 

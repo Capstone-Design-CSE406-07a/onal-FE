@@ -8,7 +8,7 @@ type SettingsHeaderProps = {
 
 export function SettingsHeader({ onBack }: SettingsHeaderProps) {
   return (
-    <div className="fixed left-0 right-0 top-0 z-10 flex h-20 items-center gap-3 border-b border-black/10 bg-white/95 px-4 backdrop-blur-sm">
+    <div className="fixed left-1/2 top-0 z-10 flex h-20 w-full max-w-150 -translate-x-1/2 items-center gap-3 border-b border-black/10 bg-white/95 px-4 backdrop-blur-sm">
       <Button onClick={onBack} variant="icon">
         <ChevronLeft className="size-6" />
       </Button>

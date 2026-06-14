@@ -1,18 +1,16 @@
-import { Button } from "@/shared/ui/button";
 import {
   ActivityTimeSelect,
   LocationsSelect,
   ScoreProfileSelect,
   SensitiveGroupSelect,
   TemperatureSelect,
-} from "@/shared/user-profile";
+} from "@/features/user-profile";
+import { Button } from "@/shared/ui/button";
 
 import { SettingsCollapsibleCard } from "../components/settings-collapsible-card";
 import { SettingsHeader } from "../components/settings-header";
 import type { SettingsCardKey } from "../constants";
 import type { UseSettingsStateReturn } from "../hooks/use-settings-state";
-
-const SENSITIVE_ICON = "http://localhost:3845/assets/c469c8b9cf5522acfb595768d3949748f208ada9.svg";
 
 type SettingsContainerProps = UseSettingsStateReturn & {
   onBack?: () => void;
@@ -45,13 +43,7 @@ export function SettingsContainer({
   }
 
   return (
-    <div
-      className="relative flex min-h-full w-full flex-col bg-white"
-      style={{
-        background:
-          "linear-gradient(110.633deg, color-mix(in srgb, var(--primary) 10%, transparent) 0%, var(--app-white) 50%, color-mix(in srgb, var(--primary) 5%, transparent) 100%)",
-      }}
-    >
+    <div className="relative flex min-h-full w-full flex-col bg-app-bg">
       <SettingsHeader onBack={onBack} />
 
       <div className="flex flex-col gap-3 px-4 py-24">
@@ -110,7 +102,7 @@ export function SettingsContainer({
         </SettingsCollapsibleCard>
 
         <SettingsCollapsibleCard
-          iconSrc={SENSITIVE_ICON}
+          iconSrc="/icons/setting/stack.svg"
           title="종합 체감 프로파일"
           description="더 정확한 맞춤 정보를 위한 추가 정보"
           isOpen={expandedCard === "score"}

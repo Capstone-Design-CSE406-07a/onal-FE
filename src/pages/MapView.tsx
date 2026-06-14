@@ -9,7 +9,7 @@ import {
   buildTempHeatmap,
   buildUvHeatmap,
 } from "../features/map/heatmap-builder";
-import { useCurrentLocation } from "../features/map/hooks/use-current-location";
+import { useCurrentLocation } from "../shared/hooks/use-current-location";
 import {
   usePmAtCenter,
   usePmNationwide,
@@ -32,7 +32,7 @@ export default function MapView() {
   const [timeOffset, setTimeOffset] = useState(0);
   const [opacity, setOpacity] = useState(0.8);
 
-  const { coords: userCoords, dong: gpsDong, status: locationStatus } = useCurrentLocation();
+  const { coords: userCoords, siGu: gpsSiGu, status: locationStatus } = useCurrentLocation();
 
   const { data: pmPoint } = usePmAtCenter();
   const { data: tempPoint } = useTempWind();
@@ -45,6 +45,9 @@ export default function MapView() {
     () => ({
       aqiIndex: pmPoint?.통합대기환경지수 ? parseInt(pmPoint.통합대기환경지수, 10) : undefined,
       temperature: tempPoint?.기온 ? parseFloat(tempPoint.기온.replace("°C", "")) : undefined,
+      humidity: tempPoint?.습도 ? parseFloat(tempPoint.습도.replace("%", "")) : undefined,
+      windMs: tempPoint?.풍속 ? parseFloat(tempPoint.풍속.replace("m/s", "")) : undefined,
+      precipForm: tempPoint?.강수형태,
       uvIndex: uvPoint?.uv,
       rainMm: tempPoint?.["1시간강수량"]
         ? parseFloat(tempPoint["1시간강수량"].replace("mm", ""))
@@ -58,7 +61,8 @@ export default function MapView() {
     if (activeLayer === "temp" && tempWindData) return buildTempHeatmap(tempWindData);
     if (activeLayer === "uv" && uvData) return buildUvHeatmap(uvData);
     if (activeLayer === "rain" && tempWindData) return buildRainHeatmap(tempWindData);
-    if (activeLayer === "risk" && pmData && uvData) return buildRiskHeatmap(pmData, uvData);
+    if (activeLayer === "risk" && pmData && tempWindData && uvData)
+      return buildRiskHeatmap(pmData, tempWindData, uvData);
     return undefined;
   }, [activeLayer, pmData, tempWindData, uvData]);
 
@@ -73,7 +77,7 @@ export default function MapView() {
       <div className="relative flex min-h-full w-full flex-col gap-3 bg-white pb-24">
         <TopInfoPanel
           data={personalizedData}
-          currentDong={gpsDong ?? personalizedData.currentDong}
+          currentDong={gpsSiGu ?? personalizedData.currentDong}
           locatingDong={locationStatus === "locating"}
         />
         <MapHeatmap

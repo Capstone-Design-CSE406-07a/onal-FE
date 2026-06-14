@@ -1,7 +1,9 @@
 import type { FeatureCollection, Point } from "geojson";
 
 import type { User } from "@/shared/api/user";
+import { apparentTemperature, personalFeltTemperature } from "@/shared/lib/felt-temperature";
 
+import { compositeHazard, heatHazard, rainHazard, uvHazard } from "./composite-risk";
 import type { InterestPlace, LayerKey } from "./constants";
 
 type FavoritePlace = User["favorite_place"][number];
@@ -17,8 +19,12 @@ export type PersonalizedMapData = {
   currentDong: string;
   metrics: {
     airQuality: number;
+    /** 실제 기온 (°C) */
     temperature: number;
-    feelsLikeScore: number;
+    /** 기상학적 체감온도 — 기온+습도+풍속 (°C) */
+    apparentTemp: number;
+    /** 개인 맞춤 체감온도 — 성향·생활지표 반영 (°C) */
+    personalFeltTemp: number;
     uvIndex: number;
     rainAmount: number;
   };
@@ -77,30 +83,6 @@ const getCoordinates = (dong: string, index: number): [number, number] => {
   return [lng + index * 0.012, lat + index * 0.008];
 };
 
-const interpolateFeltScore = (user: User | null, temperature: number) => {
-  if (!user) return 4;
-
-  const points = [
-    [0, user.felt_temperature_0],
-    [10, user.felt_temperature_10],
-    [20, user.felt_temperature_20],
-    [30, user.felt_temperature_30],
-  ] as const;
-
-  const upperIndex = points.findIndex(([temp]) => temperature <= temp);
-  if (upperIndex <= 0) {
-    return points[0][1];
-  }
-  if (upperIndex === -1) {
-    return points[points.length - 1][1];
-  }
-
-  const [lowTemp, lowScore] = points[upperIndex - 1];
-  const [highTemp, highScore] = points[upperIndex];
-  const ratio = (temperature - lowTemp) / (highTemp - lowTemp);
-  return lowScore + (highScore - lowScore) * ratio;
-};
-
 const isNearActivityTime = (user: User | null, timeOffset: number) => {
   if (!user?.activity_time.length) return false;
 
@@ -116,9 +98,7 @@ const isNearActivityTime = (user: User | null, timeOffset: number) => {
 };
 
 export function buildInterestPlacesFromUser(user: User | null): InterestPlace[] {
-  const favorites: FavoritePlace[] = user?.favorite_place?.length
-    ? user.favorite_place
-    : [{ name: "현재 위치", dong: FALLBACK_DONG }];
+  const favorites: FavoritePlace[] = user?.favorite_place ?? [];
 
   return favorites.map((place, index) => ({
     id: `${place.name}-${place.dong}-${index}`,
@@ -132,6 +112,9 @@ export function buildInterestPlacesFromUser(user: User | null): InterestPlace[] 
 export type WeatherInput = {
   aqiIndex?: number;
   temperature?: number;
+  humidity?: number;
+  windMs?: number;
+  precipForm?: string;
   uvIndex?: number;
   rainMm?: number;
 };
@@ -156,7 +139,8 @@ export function buildPersonalizedMapData(
     weather?.temperature !== undefined
       ? weather.temperature
       : Math.round((15 + dayCycle * 9 + timeOffset * 0.15) * 10) / 10;
-  const feelsLikeScore = Math.round(interpolateFeltScore(user, temperature) * 10) / 10;
+  const humidity = weather?.humidity ?? 55;
+  const windMs = weather?.windMs ?? 1.5;
   const uvIndex =
     weather?.uvIndex !== undefined
       ? weather.uvIndex
@@ -166,40 +150,64 @@ export function buildPersonalizedMapData(
       ? weather.rainMm
       : Math.round(clamp(0.8 + (1 - dayCycle) * 3.5, 0, 20) * 10) / 10;
 
+  // 체감온도 2단계: 기상학적 체감온도 → 개인 맞춤 체감온도
+  const apparentTempRaw = apparentTemperature(temperature, humidity, windMs);
+  const personalFeltRaw = user ? personalFeltTemperature(apparentTempRaw, user) : apparentTempRaw;
+  const apparentTemp = Math.round(apparentTempRaw * 10) / 10;
+  const personalFeltTemp = Math.round(personalFeltRaw * 10) / 10;
+
+  // 0~1 해저드 (복합 위험도와 히트맵이 공유하는 정규화 기준)
+  const airLevel = clamp(airQuality, 0, 100) / 100;
+  const heatLevel = heatHazard(temperature, humidity, windMs);
+  const uvLevel = uvHazard(uvIndex);
+  const rainLevel = rainHazard(
+    weather?.precipForm ?? (rainAmount > 0 ? "1" : "0"),
+    rainAmount,
+  );
+
   const activity = normalizeTenPoint(user?.activity_level);
   const waterRisk = 1 - normalizeTenPoint(user?.water_intake);
   const bodyRisk = normalizeTenPoint(user?.body_type);
   const ageRisk = normalizeTenPoint(user?.age);
-  const tempDiscomfort = Math.abs(feelsLikeScore - 4) / 3;
 
   const air = makeScore(
-    airQuality * 0.85 + (hasRespiratory ? 24 : 0) + (hasSensitiveAge ? 10 : 0) + activity * 8,
+    airLevel * 78 + (hasRespiratory ? 22 : 0) + (hasSensitiveAge ? 10 : 0) + activity * 8,
     "오늘 오후 미세먼지 주의",
     hasRespiratory
       ? "호흡기 민감군 기준으로 대기질 위험도를 높게 반영했어요."
       : "현재 활동량과 대기질을 함께 반영했어요.",
   );
   const temp = makeScore(
-    22 + tempDiscomfort * 48 + waterRisk * 12 + bodyRisk * 10 + activity * 10,
-    "체감 온도 변화 주의",
-    `현재 기온 ${temperature}°C에서 개인 체감 점수는 ${feelsLikeScore}점이에요.`,
+    heatLevel * 70 + waterRisk * 10 + bodyRisk * 8 + activity * 8 + (hasSensitiveAge ? 6 : 0),
+    personalFeltTemp >= temperature ? "더위 체감 주의" : "추위 체감 주의",
+    `기온 ${temperature}°C · 체감온도 ${apparentTemp}°C → 내 체감 ${personalFeltTemp}°C로 느껴요.`,
   );
   const uv = makeScore(
-    uvIndex * 7 + activity * 14 + waterRisk * 10 + (hasSensitiveAge ? 8 : 0),
+    uvLevel * 80 + activity * 12 + waterRisk * 8 + (hasSensitiveAge ? 8 : 0),
     "자외선 노출 관리 필요",
     "활동량과 수분 섭취 점수를 자외선 위험도에 반영했어요.",
   );
   const rain = makeScore(
-    rainAmount * 10 + commuteBoost + activity * 8,
+    rainLevel * 70 + commuteBoost + activity * 8,
     "이동 시간대 강수 확인",
     commuteBoost > 0
       ? "등록한 활동 시간과 가까워 강수 위험도를 높였어요."
       : "현재 강수 가능성과 활동량을 함께 봤어요.",
   );
+
+  // 복합 위험도 = 4개 해저드 가중합(히트맵과 동일) + 개인 민감도 보정
+  const baseRisk = compositeHazard({
+    air: airLevel,
+    heat: heatLevel,
+    rain: rainLevel,
+    uv: uvLevel,
+  });
+  const sensitivityBoost =
+    (hasRespiratory ? 8 : 0) + (hasSensitiveAge ? 8 : 0) + ageRisk * 6 + commuteBoost * 0.3;
   const risk = makeScore(
-    air.score * 0.32 + temp.score * 0.24 + uv.score * 0.2 + rain.score * 0.16 + ageRisk * 8,
+    baseRisk * 100 + sensitivityBoost,
     "복합 위험도 확인",
-    "대기질, 체감온도, 자외선, 강수를 개인 민감도와 합산한 점수예요.",
+    "대기질·체감온도·강수·자외선을 개인 민감도와 합산한 점수예요.",
   );
 
   const layerScores = { air, temp, uv, rain, risk };
@@ -209,7 +217,7 @@ export function buildPersonalizedMapData(
 
   return {
     currentDong: user?.favorite_place?.[0]?.dong ?? FALLBACK_DONG,
-    metrics: { airQuality, temperature, feelsLikeScore, uvIndex, rainAmount },
+    metrics: { airQuality, temperature, apparentTemp, personalFeltTemp, uvIndex, rainAmount },
     layerScores,
     primaryAlert,
   };

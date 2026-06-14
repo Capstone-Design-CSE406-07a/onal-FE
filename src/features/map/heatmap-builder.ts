@@ -6,6 +6,15 @@ import type {
   UvNationwideItem,
 } from "@/shared/api/weather";
 
+import {
+  airHazard,
+  compositeHazard,
+  heatHazard,
+  rainHazard,
+  uvHazard,
+} from "./composite-risk";
+import type { LayerKey } from "./constants";
+
 // sigungu centroid lookup — key: "${sido}_${sigungu}"
 const SIGUNGU_COORDS: Record<string, [number, number]> = {
   // 서울특별시 25구
@@ -206,15 +215,74 @@ export function buildRainHeatmap(
 
 export function buildRiskHeatmap(
   pmData: PmNationwideItem[],
+  tempWindData: TempWindNationwideItem[],
   uvData: UvNationwideItem[],
 ): FeatureCollection<Point, { weight: number }> {
-  const uvByKey = new Map(uvData.map((u) => [`${u.sido}_${u.sigungu}_${u.dong}`, u.uv]));
+  const key = (i: { sido: string; sigungu: string; dong: string }) =>
+    `${i.sido}_${i.sigungu}_${i.dong}`;
+  const uvByKey = new Map(uvData.map((u) => [key(u), u.uv]));
+  const tempByKey = new Map(tempWindData.map((t) => [key(t), t]));
+
   return toGeoJson(
     buildFeatures(pmData, (item) => {
-      const idx = parseInt(item.통합대기환경지수, 10);
-      const pmWeight = isNaN(idx) ? 0 : Math.min(1, (idx - 1) / 3);
-      const uv = uvByKey.get(`${item.sido}_${item.sigungu}_${item.dong}`) ?? 0;
-      return pmWeight * 0.6 + Math.min(1, uv / 11) * 0.4;
+      const tw = tempByKey.get(key(item));
+      const air = airHazard(parseInt(item.통합대기환경지수, 10));
+      const heat = tw
+        ? heatHazard(
+            parseFloat(tw.기온.replace("°C", "")),
+            parseFloat(tw.습도.replace("%", "")),
+            parseFloat(tw.풍속.replace("m/s", "")),
+          )
+        : 0;
+      const rain = tw ? rainHazard(tw.강수형태, parseFloat(tw["1시간강수량"].replace("mm", ""))) : 0;
+      const uv = uvHazard(uvByKey.get(key(item)) ?? 0);
+      return compositeHazard({ air, heat, rain, uv });
     }),
   );
+}
+
+/** 레이어별 일주기 피크 시각 (시뮬레이션용). */
+const LAYER_PEAK_HOUR: Record<LayerKey, number> = {
+  air: 8, // 출퇴근 시간대 대기질 악화
+  temp: 15, // 한낮 최고 기온
+  uv: 13, // 정오 자외선 최대
+  rain: 16, // 오후 소나기 경향
+  risk: 14,
+};
+
+/** 시각 h(0~24)에서의 일주기 강도 (0~1). */
+function diurnal(hour: number, peak: number): number {
+  return 0.5 + 0.5 * Math.cos((2 * Math.PI * (hour - peak)) / 24);
+}
+
+/**
+ * 실측 스냅샷(현재값)에 시간대별 일주기 변화를 입힌다.
+ * timeOffset === 0 이면 배율 1 → 원본 그대로, ±시간이면 시뮬레이션 예보.
+ *
+ * ⚠️ 기상청/에어코리아 nationwide API는 현재 시각 스냅샷만 제공하므로
+ *    ±12시간 값은 실측이 아닌 일주기 패턴 기반 추정치다.
+ */
+export function modulateByTime(
+  data: FeatureCollection<Point, { weight: number }>,
+  layer: LayerKey,
+  timeOffset: number,
+): FeatureCollection<Point, { weight: number }> {
+  if (timeOffset === 0) return data;
+
+  const peak = LAYER_PEAK_HOUR[layer];
+  const nowHour = new Date().getHours();
+  const targetHour = (((nowHour + timeOffset) % 24) + 24) % 24;
+  const base = 0.6 + 0.8 * diurnal(nowHour, peak);
+  const target = 0.6 + 0.8 * diurnal(targetHour, peak);
+  const factor = target / base;
+
+  return {
+    ...data,
+    features: data.features.map((feature) => ({
+      ...feature,
+      properties: {
+        weight: Math.min(1, Math.max(0, (feature.properties?.weight ?? 0) * factor)),
+      },
+    })),
+  };
 }

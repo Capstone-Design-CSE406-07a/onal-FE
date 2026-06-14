@@ -11,6 +11,7 @@ import {
   type InterestPlace,
   type LayerKey,
 } from "./constants";
+import { modulateByTime } from "./heatmap-builder";
 import { applyScoresToHeatmap, type LayerScore } from "./personalization";
 import { Skeleton } from "@/shared/ui/skeleton";
 
@@ -50,15 +51,42 @@ const buildRampExpression = (ramp: Array<[number, string]>): mapboxgl.Expression
   return expr as mapboxgl.Expression;
 };
 
+const buildSourceData = (
+  geoJsonData: FeatureCollection<Point, { weight: number }> | undefined,
+  activeLayer: LayerKey,
+  timeOffset: number,
+  layerScores: Record<LayerKey, LayerScore>,
+) => {
+  // 실측 데이터가 있으면 시간 모듈레이션을 입히고, 없으면 시뮬레이션 데이터로 폴백.
+  const base = geoJsonData
+    ? modulateByTime(geoJsonData, activeLayer, timeOffset)
+    : buildHeatmapData(activeLayer, timeOffset);
+  return applyScoresToHeatmap(base, activeLayer, layerScores);
+};
+
 const createMarkerElement = (place: InterestPlace) => {
   const el = document.createElement("div");
   const icon = document.createElement("span");
   const name = document.createElement("span");
 
   el.className =
-    "flex h-8 min-w-8 items-center gap-1 rounded-full border border-black/10 bg-white px-2 text-xs font-medium text-[#0a0a0a] shadow-[0_1px_3px_rgba(0,0,0,0.12)]";
+    "flex h-8 min-w-8 items-center gap-1 rounded-full border border-black/10 bg-white px-2 text-xs font-medium text-app-black shadow-marker";
   icon.textContent = place.icon;
   name.textContent = place.name;
+  el.append(icon, name);
+
+  return el;
+};
+
+const createCurrentLocationElement = () => {
+  const el = document.createElement("div");
+  const icon = document.createElement("span");
+  const name = document.createElement("span");
+
+  el.className =
+    "flex h-8 min-w-8 items-center gap-1 rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground shadow-marker-active";
+  icon.textContent = "📍";
+  name.textContent = "현재 위치";
   el.append(icon, name);
 
   return el;
@@ -88,6 +116,7 @@ export default function MapHeatmap({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const currentMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -119,11 +148,7 @@ export default function MapHeatmap({
       applyKoreanLabels(map);
       map.addSource(heatmapSourceId, {
         type: "geojson",
-        data: applyScoresToHeatmap(
-          geoJsonData ?? buildHeatmapData(activeLayer, timeOffset),
-          activeLayer,
-          layerScores,
-        ),
+        data: buildSourceData(geoJsonData, activeLayer, timeOffset, layerScores),
       });
       map.addLayer({
         id: heatmapLayerId,
@@ -154,6 +179,8 @@ export default function MapHeatmap({
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
+      currentMarkerRef.current?.remove();
+      currentMarkerRef.current = null;
       map.remove();
       mapRef.current = null;
       loadedRef.current = false;
@@ -185,13 +212,7 @@ export default function MapHeatmap({
       return;
     }
     const source = map.getSource(heatmapSourceId) as mapboxgl.GeoJSONSource | undefined;
-    source?.setData(
-      applyScoresToHeatmap(
-        geoJsonData ?? buildHeatmapData(activeLayer, timeOffset),
-        activeLayer,
-        layerScores,
-      ),
-    );
+    source?.setData(buildSourceData(geoJsonData, activeLayer, timeOffset, layerScores));
     map.setPaintProperty(
       heatmapLayerId,
       "heatmap-color",
@@ -212,16 +233,28 @@ export default function MapHeatmap({
     if (!map || !userCoords) {
       return;
     }
+
+    if (currentMarkerRef.current) {
+      currentMarkerRef.current.setLngLat(userCoords);
+    } else {
+      currentMarkerRef.current = new mapboxgl.Marker({
+        element: createCurrentLocationElement(),
+        anchor: "bottom",
+      })
+        .setLngLat(userCoords)
+        .addTo(map);
+    }
+
     map.flyTo({ center: userCoords, zoom: 12, essential: true });
   }, [userCoords]);
 
   return (
-    <div className="relative min-h-80 flex-1 overflow-hidden bg-[linear-gradient(114.4deg,rgba(190,211,238,0.05)_0%,rgba(190,211,238,0.1)_50%,rgba(190,211,238,0.05)_100%)]">
+    <div className="relative min-h-80 flex-1 overflow-hidden bg-[linear-gradient(114.4deg,color-mix(in_srgb,var(--primary)_5%,transparent)_0%,color-mix(in_srgb,var(--primary)_10%,transparent)_50%,color-mix(in_srgb,var(--primary)_5%,transparent)_100%)]">
       <div ref={mapContainerRef} data-heatmap="true" className="h-full w-full" />
       {locating ? (
         <div className="absolute inset-0 z-10 flex flex-col gap-3 bg-white/60 p-4 backdrop-blur-sm">
           <Skeleton className="h-full w-full" />
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-medium text-gray-dark shadow-[0_1px_3px_rgba(0,0,0,0.12)]">
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-medium text-gray-dark shadow-marker">
             <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             현재 위치를 불러오는 중…
           </div>

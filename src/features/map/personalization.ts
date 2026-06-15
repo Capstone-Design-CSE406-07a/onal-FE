@@ -1,6 +1,5 @@
-import type { FeatureCollection, Point } from "geojson";
-
 import type { User } from "@/shared/api/user";
+import { personalComfortScore } from "@/shared/lib/comfort-score";
 import { apparentTemperature, personalFeltTemperature } from "@/shared/lib/felt-temperature";
 
 import { compositeHazard, heatHazard, rainHazard, uvHazard } from "./composite-risk";
@@ -54,13 +53,6 @@ const PLACE_ICON: Record<string, string> = {
 };
 
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, value));
-
-const normalizeTenPoint = (value: number | null | undefined) => {
-  if (value === null || value === undefined) {
-    return 0.5;
-  }
-  return clamp(value, 0, 10) / 10;
-};
 
 const toLabel = (score: number): LayerScore["label"] => {
   if (score >= 75) return "위험";
@@ -165,37 +157,43 @@ export function buildPersonalizedMapData(
     rainAmount,
   );
 
-  const activity = normalizeTenPoint(user?.activity_level);
-  const waterRisk = 1 - normalizeTenPoint(user?.water_intake);
-  const bodyRisk = normalizeTenPoint(user?.body_type);
-  const ageRisk = normalizeTenPoint(user?.age);
+  // 개인 쾌적 점수(표 기준: 기온 기준점수 + 수분·활동량·체형 가감점 × 나이 배율).
+  // 온보딩 체감온도가 반영된 개인 체감온도로 밴드를 잡아 산출한다.
+  // score 0~100(높을수록 쾌적) → comfortRisk 0~1(높을수록 위험).
+  const comfort = personalComfortScore(user, personalFeltRaw);
+  const comfortRisk = (100 - comfort.score) / 100;
 
   const air = makeScore(
-    airLevel * 78 + (hasRespiratory ? 22 : 0) + (hasSensitiveAge ? 10 : 0) + activity * 8,
+    airLevel * 80 + (hasRespiratory ? 22 : 0) + (hasSensitiveAge ? 10 : 0),
     "오늘 오후 미세먼지 주의",
     hasRespiratory
       ? "호흡기 민감군 기준으로 대기질 위험도를 높게 반영했어요."
-      : "현재 활동량과 대기질을 함께 반영했어요.",
+      : "현재 대기질 지수를 반영했어요.",
   );
+  // 기온/체감: 기상 더위 스트레스 + 개인 쾌적 점수를 절반씩.
   const temp = makeScore(
-    heatLevel * 70 + waterRisk * 10 + bodyRisk * 8 + activity * 8 + (hasSensitiveAge ? 6 : 0),
-    personalFeltTemp >= temperature ? "더위 체감 주의" : "추위 체감 주의",
-    `기온 ${temperature}°C · 체감온도 ${apparentTemp}°C → 내 체감 ${personalFeltTemp}°C로 느껴요.`,
+    heatLevel * 45 + comfortRisk * 45 + (hasSensitiveAge ? 10 : 0),
+    comfort.band === "hot"
+      ? "더위 체감 주의"
+      : comfort.band === "cold"
+        ? "추위 체감 주의"
+        : "체감 온도 양호",
+    `기온 ${temperature}°C · 체감온도 ${apparentTemp}°C → 내 체감 ${personalFeltTemp}°C, 쾌적 점수 ${comfort.score}점.`,
   );
   const uv = makeScore(
-    uvLevel * 80 + activity * 12 + waterRisk * 8 + (hasSensitiveAge ? 8 : 0),
+    uvLevel * 84 + (hasSensitiveAge ? 8 : 0),
     "자외선 노출 관리 필요",
-    "활동량과 수분 섭취 점수를 자외선 위험도에 반영했어요.",
+    "현재 자외선 지수를 민감군 기준과 함께 반영했어요.",
   );
   const rain = makeScore(
-    rainLevel * 70 + commuteBoost + activity * 8,
+    rainLevel * 78 + commuteBoost,
     "이동 시간대 강수 확인",
     commuteBoost > 0
       ? "등록한 활동 시간과 가까워 강수 위험도를 높였어요."
-      : "현재 강수 가능성과 활동량을 함께 봤어요.",
+      : "현재 강수 가능성을 반영했어요.",
   );
 
-  // 복합 위험도 = 4개 해저드 가중합(히트맵과 동일) + 개인 민감도 보정
+  // 복합 위험도 = 4개 해저드 가중합(히트맵과 동일) + 개인 민감도·쾌적 점수 보정
   const baseRisk = compositeHazard({
     air: airLevel,
     heat: heatLevel,
@@ -203,11 +201,11 @@ export function buildPersonalizedMapData(
     uv: uvLevel,
   });
   const sensitivityBoost =
-    (hasRespiratory ? 8 : 0) + (hasSensitiveAge ? 8 : 0) + ageRisk * 6 + commuteBoost * 0.3;
+    (hasRespiratory ? 8 : 0) + (hasSensitiveAge ? 8 : 0) + comfortRisk * 12 + commuteBoost * 0.3;
   const risk = makeScore(
     baseRisk * 100 + sensitivityBoost,
     "복합 위험도 확인",
-    "대기질·체감온도·강수·자외선을 개인 민감도와 합산한 점수예요.",
+    "대기질·체감온도·강수·자외선을 개인 민감도·쾌적 점수와 합산한 점수예요.",
   );
 
   const layerScores = { air, temp, uv, rain, risk };
@@ -220,23 +218,5 @@ export function buildPersonalizedMapData(
     metrics: { airQuality, temperature, apparentTemp, personalFeltTemp, uvIndex, rainAmount },
     layerScores,
     primaryAlert,
-  };
-}
-
-export function applyScoresToHeatmap(
-  data: FeatureCollection<Point, { weight: number }>,
-  activeLayer: LayerKey,
-  layerScores: Record<LayerKey, LayerScore>,
-): FeatureCollection<Point, { weight: number }> {
-  const layerWeight = layerScores[activeLayer].score / 65;
-
-  return {
-    ...data,
-    features: data.features.map((feature) => ({
-      ...feature,
-      properties: {
-        weight: clamp((feature.properties?.weight ?? 0.3) * (0.55 + layerWeight), 0.05, 1),
-      },
-    })),
   };
 }

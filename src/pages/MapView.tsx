@@ -13,10 +13,10 @@ import { useCurrentLocation } from "../shared/hooks/use-current-location";
 import {
   usePmAtCenter,
   usePmNationwide,
-  useTempWind,
-  useTempWindNationwide,
   useUv,
   useUvNationwide,
+  useTempWind,
+  useTempWindNationwide,
 } from "../features/map/hooks/use-weather-data";
 import MapHeatmap from "../features/map/MapHeatmap";
 import {
@@ -37,9 +37,13 @@ export default function MapView() {
   const { data: pmPoint } = usePmAtCenter();
   const { data: tempPoint } = useTempWind();
   const { data: uvPoint } = useUv();
-  const { data: pmData } = usePmNationwide();
-  const { data: tempWindData } = useTempWindNationwide();
-  const { data: uvData } = useUvNationwide();
+
+  // 모든 레이어 데이터를 진입 시 한 번에 선로딩한다. 각 nationwide 호출은 백엔드가
+  // 격자 단위로 KMA를 병렬 호출 + 5분 캐싱하는 일괄 엔드포인트라 요청 1건씩이면 충분하고,
+  // 프런트도 영구 캐시하므로 레이어 전환이 즉시 이뤄져 빈 화면 이탈을 막는다.
+  const { data: pmData } = usePmNationwide(true);
+  const { data: tempWindData } = useTempWindNationwide(true);
+  const { data: uvData } = useUvNationwide(true);
 
   const weatherInput = useMemo(
     () => ({
@@ -57,14 +61,19 @@ export default function MapView() {
   );
 
   const geoJsonData = useMemo(() => {
-    if (activeLayer === "air" && pmData) return buildPmHeatmap(pmData);
-    if (activeLayer === "temp" && tempWindData) return buildTempHeatmap(tempWindData);
-    if (activeLayer === "uv" && uvData) return buildUvHeatmap(uvData);
-    if (activeLayer === "rain" && tempWindData) return buildRainHeatmap(tempWindData);
-    if (activeLayer === "risk" && pmData && tempWindData && uvData)
-      return buildRiskHeatmap(pmData, tempWindData, uvData);
+    if (activeLayer === "air") return pmData ? buildPmHeatmap(pmData) : undefined;
+    if (activeLayer === "temp") return tempWindData ? buildTempHeatmap(tempWindData) : undefined;
+    if (activeLayer === "rain") return tempWindData ? buildRainHeatmap(tempWindData) : undefined;
+    if (activeLayer === "uv") return uvData ? buildUvHeatmap(uvData) : undefined;
+    if (activeLayer === "risk")
+      return pmData && tempWindData && uvData
+        ? buildRiskHeatmap(pmData, tempWindData, uvData)
+        : undefined;
     return undefined;
   }, [activeLayer, pmData, tempWindData, uvData]);
+
+  // 활성 레이어 데이터가 준비되기 전엔 가짜 데이터 대신 로딩 화면을 띄운다.
+  const heatmapLoading = geoJsonData === undefined;
 
   const personalizedData = useMemo(
     () => buildPersonalizedMapData(user, timeOffset, weatherInput),
@@ -85,10 +94,10 @@ export default function MapView() {
           timeOffset={timeOffset}
           opacity={opacity}
           interestPlaces={interestPlaces}
-          layerScores={personalizedData.layerScores}
           geoJsonData={geoJsonData}
           userCoords={userCoords}
           locating={locationStatus === "locating"}
+          dataLoading={heatmapLoading}
         />
         <BottomControlsPanel
           activeLayer={activeLayer}

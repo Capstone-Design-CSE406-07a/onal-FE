@@ -1,19 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FeatureCollection, Point } from "geojson";
 import mapboxgl from "mapbox-gl";
 
 import "mapbox-gl/mapbox-gl.css";
 
-import {
-  buildHeatmapData,
-  DEFAULT_CENTER,
-  LAYER_CONFIG,
-  type InterestPlace,
-  type LayerKey,
-} from "./constants";
-import { modulateByTime } from "./heatmap-builder";
-import { applyScoresToHeatmap, type LayerScore } from "./personalization";
 import { Skeleton } from "@/shared/ui/skeleton";
+
+import { MapLegend } from "./components/map-legend";
+import { DEFAULT_CENTER, LAYER_CONFIG, type InterestPlace, type LayerKey } from "./constants";
+import { modulateByTime } from "./heatmap-builder";
 
 const heatmapSourceId = "heatmap-points";
 const heatmapLayerId = "heatmap-layer";
@@ -43,25 +38,38 @@ const applyKoreanLabels = (map: mapboxgl.Map) => {
   });
 };
 
-const buildRampExpression = (ramp: Array<[number, string]>): mapboxgl.Expression => {
-  const expr: unknown[] = ["interpolate", ["linear"], ["heatmap-density"]];
+// 색을 점 밀도가 아니라 "실제 값(weight)"에 직접 매핑한다.
+// → 지역별 값 차이(예: 기온)가 색 차이로 드러나고, 값이 낮아도 묻히지 않는다.
+const buildColorByValue = (ramp: Array<[number, string]>): mapboxgl.Expression => {
+  const expr: unknown[] = ["interpolate", ["linear"], ["get", "weight"]];
   ramp.forEach(([stop, color]) => {
     expr.push(stop, color);
   });
   return expr as mapboxgl.Expression;
 };
 
+// 모든 레이어가 전국 250개 시군구 데이터를 쓰므로 반경을 통일한다.
+// 점이 작아 흩뿌려져 보이지 않도록 충분히 키워 면처럼 보이게 한다.
+const radiusByZoom = (): mapboxgl.Expression =>
+  ["interpolate", ["linear"], ["zoom"], 6, 18, 9, 40, 11, 64, 13, 100] as mapboxgl.Expression;
+
+const EMPTY_FEATURE_COLLECTION: FeatureCollection<Point, { weight: number }> = {
+  type: "FeatureCollection",
+  features: [],
+};
+
 const buildSourceData = (
   geoJsonData: FeatureCollection<Point, { weight: number }> | undefined,
   activeLayer: LayerKey,
   timeOffset: number,
-  layerScores: Record<LayerKey, LayerScore>,
 ) => {
-  // 실측 데이터가 있으면 시간 모듈레이션을 입히고, 없으면 시뮬레이션 데이터로 폴백.
-  const base = geoJsonData
-    ? modulateByTime(geoJsonData, activeLayer, timeOffset)
-    : buildHeatmapData(activeLayer, timeOffset);
-  return applyScoresToHeatmap(base, activeLayer, layerScores);
+  // 실측 데이터가 준비되면 시간 모듈레이션을 입히고, 아직 없으면 빈 레이어를 둔다.
+  // (가짜 시뮬레이션 폴백 제거 — 로딩 중엔 상위에서 로딩 화면을 덮는다.)
+  if (geoJsonData != null && geoJsonData.features.length > 0) {
+    return modulateByTime(geoJsonData, activeLayer, timeOffset);
+  }
+
+  return EMPTY_FEATURE_COLLECTION;
 };
 
 const createMarkerElement = (place: InterestPlace) => {
@@ -97,10 +105,10 @@ type MapHeatmapProps = {
   timeOffset: number;
   opacity: number;
   interestPlaces: InterestPlace[];
-  layerScores: Record<LayerKey, LayerScore>;
   geoJsonData?: FeatureCollection<Point, { weight: number }>;
   userCoords?: [number, number] | null;
   locating?: boolean;
+  dataLoading?: boolean;
 };
 
 export default function MapHeatmap({
@@ -108,16 +116,17 @@ export default function MapHeatmap({
   timeOffset,
   opacity,
   interestPlaces,
-  layerScores,
   geoJsonData,
   userCoords,
   locating = false,
+  dataLoading = false,
 }: MapHeatmapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const currentMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const loadedRef = useRef(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) {
@@ -137,9 +146,13 @@ export default function MapHeatmap({
       center: DEFAULT_CENTER,
       zoom: 11,
       minZoom: 6,
+      // 동(洞) 라벨이 나오는 수준 이상으로는 확대 금지 — 시군구 단위 히트맵이
+      // 점처럼 깨져 보이지 않도록 제한.
+      maxZoom: 13,
       maxBounds: koreaBounds,
       attributionControl: false,
-      logoPosition: "top-right",
+      // 범례를 우측 상단에 띄우므로 로고는 좌측 하단으로 비켜둔다.
+      logoPosition: "bottom-left",
     });
 
     mapRef.current = map;
@@ -148,18 +161,18 @@ export default function MapHeatmap({
       applyKoreanLabels(map);
       map.addSource(heatmapSourceId, {
         type: "geojson",
-        data: buildSourceData(geoJsonData, activeLayer, timeOffset, layerScores),
+        data: buildSourceData(geoJsonData, activeLayer, timeOffset),
       });
       map.addLayer({
         id: heatmapLayerId,
-        type: "heatmap",
+        type: "circle",
         source: heatmapSourceId,
         paint: {
-          "heatmap-weight": ["get", "weight"],
-          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 1, 9, 3],
-          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 12, 9, 36],
-          "heatmap-opacity": opacity,
-          "heatmap-color": buildRampExpression(LAYER_CONFIG[activeLayer].ramp),
+          // 색 = 실제 값(weight). 반경을 크게 + blur 로 부드럽게 면처럼 칠한다.
+          "circle-radius": radiusByZoom(),
+          "circle-color": buildColorByValue(LAYER_CONFIG[activeLayer].ramp),
+          "circle-blur": 1,
+          "circle-opacity": opacity,
         },
       });
 
@@ -174,6 +187,7 @@ export default function MapHeatmap({
       });
 
       loadedRef.current = true;
+      setMapLoaded(true);
     });
 
     return () => {
@@ -184,6 +198,7 @@ export default function MapHeatmap({
       map.remove();
       mapRef.current = null;
       loadedRef.current = false;
+      setMapLoaded(false);
     };
     // Initial map setup only; subsequent prop changes are handled by the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -191,7 +206,7 @@ export default function MapHeatmap({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !loadedRef.current) {
+    if (!map || !mapLoaded) {
       return;
     }
 
@@ -204,33 +219,34 @@ export default function MapHeatmap({
         .addTo(map);
       markersRef.current.push(marker);
     });
-  }, [interestPlaces]);
+  }, [interestPlaces, mapLoaded]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !loadedRef.current) {
+    if (!map || !mapLoaded) {
       return;
     }
     const source = map.getSource(heatmapSourceId) as mapboxgl.GeoJSONSource | undefined;
-    source?.setData(buildSourceData(geoJsonData, activeLayer, timeOffset, layerScores));
+    source?.setData(buildSourceData(geoJsonData, activeLayer, timeOffset));
     map.setPaintProperty(
       heatmapLayerId,
-      "heatmap-color",
-      buildRampExpression(LAYER_CONFIG[activeLayer].ramp),
+      "circle-color",
+      buildColorByValue(LAYER_CONFIG[activeLayer].ramp),
     );
-  }, [activeLayer, geoJsonData, layerScores, timeOffset]);
+    map.setPaintProperty(heatmapLayerId, "circle-radius", radiusByZoom());
+  }, [activeLayer, geoJsonData, timeOffset, mapLoaded]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !loadedRef.current) {
+    if (!map || !mapLoaded) {
       return;
     }
-    map.setPaintProperty(heatmapLayerId, "heatmap-opacity", opacity);
-  }, [opacity]);
+    map.setPaintProperty(heatmapLayerId, "circle-opacity", opacity);
+  }, [opacity, mapLoaded]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !userCoords) {
+    if (!map || !mapLoaded || !userCoords) {
       return;
     }
 
@@ -246,17 +262,18 @@ export default function MapHeatmap({
     }
 
     map.flyTo({ center: userCoords, zoom: 12, essential: true });
-  }, [userCoords]);
+  }, [userCoords, mapLoaded]);
 
   return (
     <div className="relative min-h-80 flex-1 overflow-hidden bg-[linear-gradient(114.4deg,color-mix(in_srgb,var(--primary)_5%,transparent)_0%,color-mix(in_srgb,var(--primary)_10%,transparent)_50%,color-mix(in_srgb,var(--primary)_5%,transparent)_100%)]">
       <div ref={mapContainerRef} data-heatmap="true" className="h-full w-full" />
-      {locating ? (
+      <MapLegend activeLayer={activeLayer} />
+      {locating || dataLoading ? (
         <div className="absolute inset-0 z-10 flex flex-col gap-3 bg-white/60 p-4 backdrop-blur-sm">
           <Skeleton className="h-full w-full" />
           <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-medium text-gray-dark shadow-marker">
             <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            현재 위치를 불러오는 중…
+            {locating ? "현재 위치를 불러오는 중…" : "날씨 데이터를 불러오는 중…"}
           </div>
         </div>
       ) : null}

@@ -14,135 +14,7 @@ import {
   uvHazard,
 } from "./composite-risk";
 import type { LayerKey } from "./constants";
-
-// sigungu centroid lookup — key: "${sido}_${sigungu}"
-const SIGUNGU_COORDS: Record<string, [number, number]> = {
-  // 서울특별시 25구
-  "서울특별시_종로구": [126.9784, 37.5720],
-  "서울특별시_중구": [126.9979, 37.5633],
-  "서울특별시_용산구": [126.9647, 37.5326],
-  "서울특별시_성동구": [127.0370, 37.5633],
-  "서울특별시_광진구": [127.0822, 37.5397],
-  "서울특별시_동대문구": [127.0404, 37.5744],
-  "서울특별시_중랑구": [127.0938, 37.6066],
-  "서울특별시_성북구": [127.0171, 37.5894],
-  "서울특별시_강북구": [127.0114, 37.6398],
-  "서울특별시_도봉구": [127.0469, 37.6688],
-  "서울특별시_노원구": [127.0568, 37.6542],
-  "서울특별시_은평구": [126.9234, 37.6026],
-  "서울특별시_서대문구": [126.9361, 37.5791],
-  "서울특별시_마포구": [126.9019, 37.5663],
-  "서울특별시_양천구": [126.8587, 37.5170],
-  "서울특별시_강서구": [126.8495, 37.5509],
-  "서울특별시_구로구": [126.8885, 37.4954],
-  "서울특별시_금천구": [126.8956, 37.4566],
-  "서울특별시_영등포구": [126.8963, 37.5264],
-  "서울특별시_동작구": [126.9397, 37.5124],
-  "서울특별시_관악구": [126.9514, 37.4784],
-  "서울특별시_서초구": [127.0324, 37.4836],
-  "서울특별시_강남구": [127.0473, 37.5172],
-  "서울특별시_송파구": [127.1055, 37.5145],
-  "서울특별시_강동구": [127.1238, 37.5302],
-  // 부산광역시
-  "부산광역시_중구": [129.0300, 35.1061],
-  "부산광역시_서구": [129.0231, 35.0978],
-  "부산광역시_동구": [129.0435, 35.1294],
-  "부산광역시_영도구": [129.0658, 35.0885],
-  "부산광역시_부산진구": [129.0506, 35.1598],
-  "부산광역시_동래구": [129.0854, 35.2042],
-  "부산광역시_남구": [129.0798, 35.1367],
-  "부산광역시_북구": [129.0257, 35.1977],
-  "부산광역시_해운대구": [129.1649, 35.1631],
-  "부산광역시_사하구": [128.9724, 35.0999],
-  "부산광역시_금정구": [129.0926, 35.2442],
-  "부산광역시_강서구": [128.9047, 35.2123],
-  "부산광역시_연제구": [129.0825, 35.1762],
-  "부산광역시_수영구": [129.1128, 35.1452],
-  "부산광역시_사상구": [128.9924, 35.1496],
-  "부산광역시_기장군": [129.2219, 35.2440],
-  // 대구광역시
-  "대구광역시_중구": [128.5910, 35.8714],
-  "대구광역시_동구": [128.6417, 35.8867],
-  "대구광역시_서구": [128.5593, 35.8723],
-  "대구광역시_남구": [128.5974, 35.8511],
-  "대구광역시_북구": [128.5820, 35.8850],
-  "대구광역시_수성구": [128.6312, 35.8564],
-  "대구광역시_달서구": [128.5337, 35.8313],
-  "대구광역시_달성군": [128.4313, 35.7747],
-  // 인천광역시
-  "인천광역시_중구": [126.6217, 37.4738],
-  "인천광역시_동구": [126.6424, 37.4747],
-  "인천광역시_미추홀구": [126.6511, 37.4636],
-  "인천광역시_연수구": [126.6800, 37.4100],
-  "인천광역시_남동구": [126.7273, 37.4473],
-  "인천광역시_부평구": [126.7218, 37.5009],
-  "인천광역시_계양구": [126.7374, 37.5371],
-  "인천광역시_서구": [126.6760, 37.5448],
-  "인천광역시_강화군": [126.4869, 37.7416],
-  "인천광역시_옹진군": [126.6305, 37.5500],
-  // 광주광역시
-  "광주광역시_동구": [126.9230, 35.1399],
-  "광주광역시_서구": [126.8901, 35.1523],
-  "광주광역시_남구": [126.9026, 35.1268],
-  "광주광역시_북구": [126.9124, 35.1745],
-  "광주광역시_광산구": [126.7936, 35.1396],
-  // 대전광역시
-  "대전광역시_동구": [127.4547, 36.3121],
-  "대전광역시_중구": [127.4149, 36.3244],
-  "대전광역시_서구": [127.3837, 36.3551],
-  "대전광역시_유성구": [127.3565, 36.3622],
-  "대전광역시_대덕구": [127.4151, 36.3467],
-  // 울산광역시
-  "울산광역시_중구": [129.3243, 35.5690],
-  "울산광역시_남구": [129.3312, 35.5390],
-  "울산광역시_동구": [129.4166, 35.5052],
-  "울산광역시_북구": [129.3598, 35.5843],
-  "울산광역시_울주군": [129.2408, 35.5220],
-  // 세종특별자치시
-  "세종특별자치시_세종시": [127.2890, 36.4800],
-  // 경기도
-  "경기도_수원시 장안구": [127.0194, 37.2989],
-  "경기도_수원시 권선구": [127.0040, 37.2591],
-  "경기도_수원시 팔달구": [127.0080, 37.2814],
-  "경기도_수원시 영통구": [127.0467, 37.2687],
-  "경기도_성남시 수정구": [127.1443, 37.4467],
-  "경기도_성남시 중원구": [127.1413, 37.4310],
-  "경기도_성남시 분당구": [127.1219, 37.3837],
-  "경기도_고양시 덕양구": [126.8361, 37.6343],
-  "경기도_고양시 일산동구": [126.7727, 37.6547],
-  "경기도_고양시 일산서구": [126.7494, 37.6725],
-  "경기도_용인시 처인구": [127.2006, 37.2343],
-  "경기도_용인시 기흥구": [127.1134, 37.2760],
-  "경기도_용인시 수지구": [127.0571, 37.3223],
-  "경기도_부천시": [126.7831, 37.5035],
-  "경기도_안산시 단원구": [126.8220, 37.3219],
-  "경기도_안산시 상록구": [126.8540, 37.3055],
-  "경기도_안양시 만안구": [126.9248, 37.3960],
-  "경기도_안양시 동안구": [126.9489, 37.3897],
-  "경기도_남양주시": [127.2129, 37.6364],
-  "경기도_의정부시": [127.0340, 37.7382],
-  "경기도_평택시": [127.1122, 36.9920],
-  "경기도_시흥시": [126.8024, 37.3800],
-  "경기도_파주시": [126.7878, 37.7597],
-  "경기도_김포시": [126.7156, 37.6154],
-  "경기도_광주시": [127.2541, 37.4295],
-  "경기도_하남시": [127.2149, 37.5398],
-  "경기도_군포시": [126.9348, 37.3624],
-  "경기도_오산시": [127.0770, 37.1501],
-  "경기도_이천시": [127.4358, 37.2723],
-  "경기도_양주시": [127.0460, 37.7855],
-  "경기도_구리시": [127.1296, 37.5943],
-  "경기도_광명시": [126.8646, 37.4779],
-  "경기도_화성시": [126.8316, 37.1996],
-  "경기도_의왕시": [126.9689, 37.3447],
-  "경기도_과천시": [126.9879, 37.4292],
-  "경기도_동두천시": [127.0600, 37.9037],
-  "경기도_양평군": [127.4914, 37.4914],
-  "경기도_여주시": [127.6361, 37.2985],
-  "경기도_가평군": [127.5103, 37.8315],
-  "경기도_포천시": [127.2003, 37.8949],
-  "경기도_연천군": [127.0746, 38.0968],
-};
+import { REGION_COORDS } from "./region-coords";
 
 // deterministic scatter within sigungu — keeps same dong at same offset across re-renders
 function dongOffset(dong: string): [number, number] {
@@ -153,12 +25,58 @@ function dongOffset(dong: string): [number, number] {
   return [((h & 0xff) - 128) / 25000, (((h >> 8) & 0xff) - 128) / 25000];
 }
 
+// 백엔드 sido 표기가 축약형("서울")으로 와도 사전 키("서울특별시")와 매칭되도록 정규화.
+const SIDO_ALIASES: Record<string, string> = {
+  서울: "서울특별시",
+  부산: "부산광역시",
+  대구: "대구광역시",
+  인천: "인천광역시",
+  광주: "광주광역시",
+  대전: "대전광역시",
+  울산: "울산광역시",
+  세종: "세종특별자치시",
+  경기: "경기도",
+  강원: "강원특별자치도",
+  충북: "충청북도",
+  충남: "충청남도",
+  전북: "전북특별자치도",
+  전남: "전라남도",
+  경북: "경상북도",
+  경남: "경상남도",
+  제주: "제주특별자치도",
+};
+
+function normalizeRegionPart(value: string): string {
+  return value.trim().replace(/\s+/g, "");
+}
+
+const REGION_COORDS_NORMALIZED: Record<string, [number, number]> = Object.fromEntries(
+  Object.entries(REGION_COORDS).map(([key, value]) => [normalizeRegionPart(key), value]),
+);
+
+function lookupSigunguCoords(sido: string, sigungu: string): [number, number] | undefined {
+  const s = sido.trim();
+  const g = sigungu.trim();
+  const canonicalSido = SIDO_ALIASES[s] ?? s;
+  const exactKey = `${s}_${g}`;
+  const canonicalKey = `${canonicalSido}_${g}`;
+  const normalizedExactKey = normalizeRegionPart(exactKey);
+  const normalizedCanonicalKey = normalizeRegionPart(canonicalKey);
+
+  return (
+    REGION_COORDS[exactKey] ??
+    REGION_COORDS[canonicalKey] ??
+    REGION_COORDS_NORMALIZED[normalizedExactKey] ??
+    REGION_COORDS_NORMALIZED[normalizedCanonicalKey]
+  );
+}
+
 function buildFeatures<T extends { sido: string; sigungu: string; dong: string }>(
   items: T[],
   weightFn: (item: T) => number,
 ): FeatureCollection<Point, { weight: number }>["features"] {
   return items.flatMap((item) => {
-    const base = SIGUNGU_COORDS[`${item.sido}_${item.sigungu}`];
+    const base = lookupSigunguCoords(item.sido, item.sigungu);
     if (!base) return [];
     const [dLng, dLat] = dongOffset(item.dong);
     return [
@@ -177,6 +95,14 @@ function toGeoJson(
   return { type: "FeatureCollection", features };
 }
 
+// KMA는 관측 결측을 -999 / -998.9 같은 음수 센티넬로 내려보낸다(예: 옹진군 도서지역).
+// 그대로 계산에 넣으면 체감온도·위험도가 엉뚱하게 튀므로, 파싱 단계에서 null 처리한다.
+const KMA_SENTINEL_MAX = -90;
+function parseKmaNumber(raw: string, unit: string): number | null {
+  const n = parseFloat(raw.replace(unit, ""));
+  return Number.isNaN(n) || n <= KMA_SENTINEL_MAX ? null : n;
+}
+
 export function buildPmHeatmap(data: PmNationwideItem[]): FeatureCollection<Point, { weight: number }> {
   return toGeoJson(
     buildFeatures(data, (item) => {
@@ -190,10 +116,13 @@ export function buildTempHeatmap(
   data: TempWindNationwideItem[],
 ): FeatureCollection<Point, { weight: number }> {
   return toGeoJson(
-    buildFeatures(data, (item) => {
-      const temp = parseFloat(item.기온.replace("°C", ""));
-      return isNaN(temp) ? 0 : Math.min(1, Math.max(0, (temp + 20) / 60));
-    }),
+    buildFeatures(
+      // 결측 격자는 아예 점을 찍지 않는다(0으로 칠하면 가짜 한파 지점이 생김).
+      data.filter((item) => parseKmaNumber(item.기온, "°C") !== null),
+      // weight = 기온/40. 색 스톱(constants의 temp.ramp)이 체감에 맞춰 배치돼 있어,
+      // 25°C는 쾌적한 노랑, 30°C↑부터 주황·빨강으로 칠해진다.
+      (item) => Math.min(1, Math.max(0, parseKmaNumber(item.기온, "°C")! / 40)),
+    ),
   );
 }
 
@@ -205,11 +134,14 @@ export function buildRainHeatmap(
   data: TempWindNationwideItem[],
 ): FeatureCollection<Point, { weight: number }> {
   return toGeoJson(
-    buildFeatures(data, (item) => {
-      if (item.강수형태 === "0") return 0;
-      const mm = parseFloat(item["1시간강수량"].replace("mm", ""));
-      return isNaN(mm) ? 0.4 : Math.min(1, mm / 10 + 0.4);
-    }),
+    buildFeatures(
+      data.filter((item) => parseKmaNumber(item.기온, "°C") !== null),
+      (item) => {
+        if (item.강수형태 === "0") return 0;
+        const mm = parseKmaNumber(item["1시간강수량"], "mm");
+        return mm === null ? 0.4 : Math.min(1, mm / 10 + 0.4);
+      },
+    ),
   );
 }
 
@@ -227,14 +159,13 @@ export function buildRiskHeatmap(
     buildFeatures(pmData, (item) => {
       const tw = tempByKey.get(key(item));
       const air = airHazard(parseInt(item.통합대기환경지수, 10));
-      const heat = tw
-        ? heatHazard(
-            parseFloat(tw.기온.replace("°C", "")),
-            parseFloat(tw.습도.replace("%", "")),
-            parseFloat(tw.풍속.replace("m/s", "")),
-          )
-        : 0;
-      const rain = tw ? rainHazard(tw.강수형태, parseFloat(tw["1시간강수량"].replace("mm", ""))) : 0;
+      // 센티넬(-999 등)이면 해당 요소를 무시(0/기본값)해 옹진군 같은 가짜 위험지점 방지.
+      const t = tw ? parseKmaNumber(tw.기온, "°C") : null;
+      const h = tw ? parseKmaNumber(tw.습도, "%") : null;
+      const w = tw ? parseKmaNumber(tw.풍속, "m/s") : null;
+      const heat = t !== null ? heatHazard(t, h ?? 55, w ?? 1) : 0;
+      const mm = tw ? parseKmaNumber(tw["1시간강수량"], "mm") : null;
+      const rain = tw ? rainHazard(tw.강수형태, mm ?? 0) : 0;
       const uv = uvHazard(uvByKey.get(key(item)) ?? 0);
       return compositeHazard({ air, heat, rain, uv });
     }),

@@ -9,7 +9,8 @@ export type LayerConfig = {
   ramp: Array<[number, string]>;
 };
 
-export const LAYER_KEYS: LayerKey[] = ["air", "temp", "uv", "rain", "risk"];
+// 자외선(uv) 레이어: /getdata/uv/nationwide가 전국 uv:0 반환하는 BE 이슈로 임시 숨김
+export const LAYER_KEYS: LayerKey[] = ["air", "temp", /* "uv", */ "rain", "risk"];
 
 export const LAYER_CONFIG: Record<LayerKey, LayerConfig> = {
   // 램프 최저 스톱은 "투명"이 아니라 옅은 색 — 값이 낮은(안전/없음) 지역도

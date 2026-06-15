@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 
 import BottomControlsPanel from "../features/map/BottomControlsPanel";
 import type { LayerKey } from "../features/map/constants";
@@ -9,22 +9,25 @@ import {
   buildTempHeatmap,
   buildUvHeatmap,
 } from "../features/map/heatmap-builder";
-import { useCurrentLocation } from "../shared/hooks/use-current-location";
 import {
   usePmAtCenter,
   usePmNationwide,
-  useUv,
-  useUvNationwide,
   useTempWind,
   useTempWindNationwide,
+  useUv,
+  useUvNationwide,
 } from "../features/map/hooks/use-weather-data";
-import MapHeatmap from "../features/map/MapHeatmap";
 import {
   buildInterestPlacesFromUser,
   buildPersonalizedMapData,
 } from "../features/map/personalization";
 import TopInfoPanel from "../features/map/TopInfoPanel";
 import { useUser } from "../shared/contexts/use-user";
+import { useCurrentLocation } from "../shared/hooks/use-current-location";
+
+// mapbox-gl(~1MB)을 끌어오는 무거운 컴포넌트라 별도 청크로 분리한다.
+// 페이지 셸(요약 카드·컨트롤)이 먼저 그려지고 지도는 뒤이어 로드된다.
+const MapHeatmap = lazy(() => import("../features/map/MapHeatmap"));
 
 export default function MapView() {
   const { user } = useUser();
@@ -89,16 +92,18 @@ export default function MapView() {
           currentDong={gpsSiGu ?? personalizedData.currentDong}
           locatingDong={locationStatus === "locating"}
         />
-        <MapHeatmap
-          activeLayer={activeLayer}
-          timeOffset={timeOffset}
-          opacity={opacity}
-          interestPlaces={interestPlaces}
-          geoJsonData={geoJsonData}
-          userCoords={userCoords}
-          locating={locationStatus === "locating"}
-          dataLoading={heatmapLoading}
-        />
+        <Suspense fallback={<div className="min-h-80 flex-1 animate-pulse bg-gray-light" />}>
+          <MapHeatmap
+            activeLayer={activeLayer}
+            timeOffset={timeOffset}
+            opacity={opacity}
+            interestPlaces={interestPlaces}
+            geoJsonData={geoJsonData}
+            userCoords={userCoords}
+            locating={locationStatus === "locating"}
+            dataLoading={heatmapLoading}
+          />
+        </Suspense>
         <BottomControlsPanel
           activeLayer={activeLayer}
           onLayerChange={setActiveLayer}

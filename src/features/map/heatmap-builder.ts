@@ -6,13 +6,7 @@ import type {
   UvNationwideItem,
 } from "@/shared/api/weather";
 
-import {
-  airHazard,
-  compositeHazard,
-  heatHazard,
-  rainHazard,
-  uvHazard,
-} from "./composite-risk";
+import { airHazard, compositeHazard, heatHazard, rainHazard, uvHazard } from "./composite-risk";
 import type { LayerKey } from "./constants";
 import { REGION_COORDS } from "./region-coords";
 
@@ -103,7 +97,9 @@ function parseKmaNumber(raw: string, unit: string): number | null {
   return Number.isNaN(n) || n <= KMA_SENTINEL_MAX ? null : n;
 }
 
-export function buildPmHeatmap(data: PmNationwideItem[]): FeatureCollection<Point, { weight: number }> {
+export function buildPmHeatmap(
+  data: PmNationwideItem[],
+): FeatureCollection<Point, { weight: number }> {
   return toGeoJson(
     buildFeatures(data, (item) => {
       const idx = parseInt(item.통합대기환경지수, 10);
@@ -126,7 +122,9 @@ export function buildTempHeatmap(
   );
 }
 
-export function buildUvHeatmap(data: UvNationwideItem[]): FeatureCollection<Point, { weight: number }> {
+export function buildUvHeatmap(
+  data: UvNationwideItem[],
+): FeatureCollection<Point, { weight: number }> {
   return toGeoJson(buildFeatures(data, (item) => Math.min(1, item.uv / 11)));
 }
 

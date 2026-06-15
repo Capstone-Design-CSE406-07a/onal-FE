@@ -38,8 +38,6 @@ const applyKoreanLabels = (map: mapboxgl.Map) => {
   });
 };
 
-// 색을 점 밀도가 아니라 "실제 값(weight)"에 직접 매핑한다.
-// → 지역별 값 차이(예: 기온)가 색 차이로 드러나고, 값이 낮아도 묻히지 않는다.
 const buildColorByValue = (ramp: Array<[number, string]>): mapboxgl.Expression => {
   const expr: unknown[] = ["interpolate", ["linear"], ["get", "weight"]];
   ramp.forEach(([stop, color]) => {
@@ -48,8 +46,6 @@ const buildColorByValue = (ramp: Array<[number, string]>): mapboxgl.Expression =
   return expr as mapboxgl.Expression;
 };
 
-// 모든 레이어가 전국 250개 시군구 데이터를 쓰므로 반경을 통일한다.
-// 점이 작아 흩뿌려져 보이지 않도록 충분히 키워 면처럼 보이게 한다.
 const radiusByZoom = (): mapboxgl.Expression =>
   ["interpolate", ["linear"], ["zoom"], 6, 18, 9, 40, 11, 64, 13, 100] as mapboxgl.Expression;
 
@@ -63,8 +59,6 @@ const buildSourceData = (
   activeLayer: LayerKey,
   timeOffset: number,
 ) => {
-  // 실측 데이터가 준비되면 시간 모듈레이션을 입히고, 아직 없으면 빈 레이어를 둔다.
-  // (가짜 시뮬레이션 폴백 제거 — 로딩 중엔 상위에서 로딩 화면을 덮는다.)
   if (geoJsonData != null && geoJsonData.features.length > 0) {
     return modulateByTime(geoJsonData, activeLayer, timeOffset);
   }
@@ -146,12 +140,9 @@ export default function MapHeatmap({
       center: DEFAULT_CENTER,
       zoom: 11,
       minZoom: 6,
-      // 동(洞) 라벨이 나오는 수준 이상으로는 확대 금지 — 시군구 단위 히트맵이
-      // 점처럼 깨져 보이지 않도록 제한.
       maxZoom: 13,
       maxBounds: koreaBounds,
       attributionControl: false,
-      // 범례를 우측 상단에 띄우므로 로고는 좌측 하단으로 비켜둔다.
       logoPosition: "bottom-left",
     });
 
@@ -168,7 +159,6 @@ export default function MapHeatmap({
         type: "circle",
         source: heatmapSourceId,
         paint: {
-          // 색 = 실제 값(weight). 반경을 크게 + blur 로 부드럽게 면처럼 칠한다.
           "circle-radius": radiusByZoom(),
           "circle-color": buildColorByValue(LAYER_CONFIG[activeLayer].ramp),
           "circle-blur": 1,
@@ -200,7 +190,6 @@ export default function MapHeatmap({
       loadedRef.current = false;
       setMapLoaded(false);
     };
-    // Initial map setup only; subsequent prop changes are handled by the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

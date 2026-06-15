@@ -6,7 +6,20 @@ import type {
   UvNationwideItem,
 } from "@/shared/api/weather";
 
-import { airHazard, compositeHazard, heatHazard, rainHazard, uvHazard } from "./composite-risk";
+import type { User } from "@/shared/api/user";
+import {
+  apparentTemperature,
+  type FeltTemperaturePreference,
+  personalFeltTemperature,
+} from "@/shared/lib/felt-temperature";
+
+import {
+  airHazard,
+  compositeHazard,
+  personalHeatHazard,
+  rainHazard,
+  uvHazard,
+} from "./composite-risk";
 import type { LayerKey } from "./constants";
 import { REGION_COORDS } from "./region-coords";
 
@@ -110,14 +123,24 @@ export function buildPmHeatmap(
 
 export function buildTempHeatmap(
   data: TempWindNationwideItem[],
+  preference?: FeltTemperaturePreference,
 ): FeatureCollection<Point, { weight: number }> {
   return toGeoJson(
     buildFeatures(
       // 결측 격자는 아예 점을 찍지 않는다(0으로 칠하면 가짜 한파 지점이 생김).
       data.filter((item) => parseKmaNumber(item.기온, "°C") !== null),
-      // weight = 기온/40. 색 스톱(constants의 temp.ramp)이 체감에 맞춰 배치돼 있어,
-      // 25°C는 쾌적한 노랑, 30°C↑부터 주황·빨강으로 칠해진다.
-      (item) => Math.min(1, Math.max(0, parseKmaNumber(item.기온, "°C")! / 40)),
+      // weight = 개인 체감온도/40. 실제 기온이 아니라 ① 기상학적 체감(기온+습도+풍속)에
+      // ② 온보딩 체감 성향(felt_temperature_*)을 입힌 "내가 느끼는 온도"로 칠한다.
+      // 색 스톱(constants의 temp.ramp)이 체감 °C에 맞춰 배치돼 있어, 같은 25°C라도
+      // 더위에 민감한 사용자는 주황 쪽으로 더 진하게 보인다.
+      (item) => {
+        const tempC = parseKmaNumber(item.기온, "°C")!;
+        const humidity = parseKmaNumber(item.습도, "%") ?? 55;
+        const wind = parseKmaNumber(item.풍속, "m/s") ?? 1;
+        const apparent = apparentTemperature(tempC, humidity, wind);
+        const felt = preference ? personalFeltTemperature(apparent, preference) : apparent;
+        return Math.min(1, Math.max(0, felt / 40));
+      },
     ),
   );
 }
@@ -147,6 +170,8 @@ export function buildRiskHeatmap(
   pmData: PmNationwideItem[],
   tempWindData: TempWindNationwideItem[],
   uvData: UvNationwideItem[],
+  // 로그인·온보딩 완료 사용자면 종합 쾌적 점수로 heat 항을 개인화한다(없으면 일반식 fallback).
+  user?: User | null,
 ): FeatureCollection<Point, { weight: number }> {
   const key = (i: { sido: string; sigungu: string; dong: string }) =>
     `${i.sido}_${i.sigungu}_${i.dong}`;
@@ -161,7 +186,7 @@ export function buildRiskHeatmap(
       const t = tw ? parseKmaNumber(tw.기온, "°C") : null;
       const h = tw ? parseKmaNumber(tw.습도, "%") : null;
       const w = tw ? parseKmaNumber(tw.풍속, "m/s") : null;
-      const heat = t !== null ? heatHazard(t, h ?? 55, w ?? 1) : 0;
+      const heat = t !== null ? personalHeatHazard(t, h ?? 55, w ?? 1, user) : 0;
       const mm = tw ? parseKmaNumber(tw["1시간강수량"], "mm") : null;
       const rain = tw ? rainHazard(tw.강수형태, mm ?? 0) : 0;
       const uv = uvHazard(uvByKey.get(key(item)) ?? 0);

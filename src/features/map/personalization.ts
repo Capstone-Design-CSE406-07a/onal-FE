@@ -61,12 +61,39 @@ const toLabel = (score: number): LayerScore["label"] => {
   return "낮음";
 };
 
-const makeScore = (score: number, headline: string, detail: string): LayerScore => ({
-  score: Math.round(clamp(score)),
-  label: toLabel(score),
-  headline,
-  detail,
-});
+// 헤드라인은 고정 문자열 대신 label(주의/위험 등)을 받아 동적으로 만든다.
+const makeScore = (
+  score: number,
+  headline: string | ((label: LayerScore["label"]) => string),
+  detail: string,
+): LayerScore => {
+  const label = toLabel(score);
+  return {
+    score: Math.round(clamp(score)),
+    label,
+    headline: typeof headline === "function" ? headline(label) : headline,
+    detail,
+  };
+};
+
+// 저장된 sensivity 값 → 배너에 노출할 표시명.
+const SENSITIVITY_DISPLAY: Record<string, string> = {
+  "천식/호흡기": "호흡기 민감군",
+  영유아동반: "영유아 동반",
+  노인: "노인",
+};
+
+const sensitivityNames = (user: User | null): string[] =>
+  (user?.sensivity ?? []).map((value) => SENSITIVITY_DISPLAY[value]).filter(Boolean);
+
+// 현재 시각 + 시간 슬라이더 오프셋(hour)을 "오늘 오후" 같은 시간대 문구로 변환.
+const whenPhrase = (hour: number): string => {
+  const day = Math.floor(hour / 24);
+  const h = ((hour % 24) + 24) % 24;
+  const dayLabel = day > 0 ? "내일" : day < 0 ? "어제" : "오늘";
+  const part = h < 6 ? "새벽" : h < 12 ? "오전" : h < 18 ? "오후" : "저녁";
+  return `${dayLabel} ${part}`;
+};
 
 const getCoordinates = (dong: string, index: number): [number, number] => {
   const matchedKey = Object.keys(DONG_COORDINATES).find((key) => dong.includes(key));
@@ -163,34 +190,41 @@ export function buildPersonalizedMapData(
   const comfort = personalComfortScore(user, personalFeltRaw);
   const comfortRisk = (100 - comfort.score) / 100;
 
+  const when = whenPhrase(hour);
+  const groups = sensitivityNames(user);
+  const groupText = groups.join("·");
+
   const air = makeScore(
     airLevel * 80 + (hasRespiratory ? 22 : 0) + (hasSensitiveAge ? 10 : 0),
-    "오늘 오후 미세먼지 주의",
-    hasRespiratory
-      ? "호흡기 민감군 기준으로 대기질 위험도를 높게 반영했어요."
-      : "현재 대기질 지수를 반영했어요.",
+    (label) => `${when} 미세먼지 ${label}`,
+    groups.length
+      ? `${groupText} 기준으로 대기질 위험도를 높여 반영했어요. (대기질 점수 ${airQuality})`
+      : `현재 대기질 점수 ${airQuality}을 반영했어요.`,
   );
   // 기온/체감: 기상 더위 스트레스 + 개인 쾌적 점수를 절반씩.
   const temp = makeScore(
     heatLevel * 45 + comfortRisk * 45 + (hasSensitiveAge ? 10 : 0),
-    comfort.band === "hot"
-      ? "더위 체감 주의"
-      : comfort.band === "cold"
-        ? "추위 체감 주의"
-        : "체감 온도 양호",
+    (label) =>
+      comfort.band === "hot"
+        ? `${when} 더위 체감 ${label}`
+        : comfort.band === "cold"
+          ? `${when} 추위 체감 ${label}`
+          : "체감 온도 양호",
     `기온 ${temperature}°C · 체감온도 ${apparentTemp}°C → 내 체감 ${personalFeltTemp}°C, 쾌적 점수 ${comfort.score}점.`,
   );
   const uv = makeScore(
     uvLevel * 84 + (hasSensitiveAge ? 8 : 0),
-    "자외선 노출 관리 필요",
-    "현재 자외선 지수를 민감군 기준과 함께 반영했어요.",
+    (label) => `${when} 자외선 ${label}`,
+    groups.length
+      ? `자외선 지수 ${uvIndex}을 ${groupText} 기준과 함께 반영했어요.`
+      : `현재 자외선 지수 ${uvIndex}을 반영했어요.`,
   );
   const rain = makeScore(
     rainLevel * 78 + commuteBoost,
-    "이동 시간대 강수 확인",
+    (label) => `${when} 강수 ${label}`,
     commuteBoost > 0
-      ? "등록한 활동 시간과 가까워 강수 위험도를 높였어요."
-      : "현재 강수 가능성을 반영했어요.",
+      ? `등록한 활동 시간과 가까워 강수 위험도를 높였어요. (강수량 ${rainAmount}mm)`
+      : `현재 강수 가능성을 반영했어요. (강수량 ${rainAmount}mm)`,
   );
 
   // 복합 위험도 = 4개 해저드 가중합(히트맵과 동일) + 개인 민감도·쾌적 점수 보정
@@ -204,8 +238,10 @@ export function buildPersonalizedMapData(
     (hasRespiratory ? 8 : 0) + (hasSensitiveAge ? 8 : 0) + comfortRisk * 12 + commuteBoost * 0.3;
   const risk = makeScore(
     baseRisk * 100 + sensitivityBoost,
-    "복합 위험도 확인",
-    "대기질·체감온도·강수·자외선을 개인 민감도·쾌적 점수와 합산한 점수예요.",
+    (label) => `${when} 복합 위험도 ${label}`,
+    groups.length
+      ? `대기질·체감온도·강수·자외선을 ${groupText} 민감도·쾌적 점수와 합산했어요.`
+      : "대기질·체감온도·강수·자외선을 쾌적 점수와 합산했어요.",
   );
 
   const layerScores = { air, temp, uv, rain, risk };

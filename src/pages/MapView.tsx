@@ -68,15 +68,16 @@ export default function MapView() {
 
   const geoJsonData = useMemo(() => {
     if (activeLayer === "air") return pmData ? buildPmHeatmap(pmData) : undefined;
-    if (activeLayer === "temp") return tempWindData ? buildTempHeatmap(tempWindData) : undefined;
+    if (activeLayer === "temp")
+      return tempWindData ? buildTempHeatmap(tempWindData, user ?? undefined) : undefined;
     if (activeLayer === "rain") return tempWindData ? buildRainHeatmap(tempWindData) : undefined;
     if (activeLayer === "uv") return uvData ? buildUvHeatmap(uvData) : undefined;
     if (activeLayer === "risk")
       return pmData && tempWindData && uvData
-        ? buildRiskHeatmap(pmData, tempWindData, uvData)
+        ? buildRiskHeatmap(pmData, tempWindData, uvData, user ?? undefined)
         : undefined;
     return undefined;
-  }, [activeLayer, pmData, tempWindData, uvData]);
+  }, [activeLayer, pmData, tempWindData, uvData, user]);
 
   // 활성 레이어 데이터가 준비되기 전엔 로딩 화면을 띄우되, 재시도까지 모두 실패(429 등)해
   // 쿼리가 에러로 끝나면 로딩을 거두고 빈 히트맵을 보여준다(무한 로딩 방지).

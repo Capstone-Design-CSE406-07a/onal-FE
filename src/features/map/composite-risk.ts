@@ -1,4 +1,6 @@
-import { apparentTemperature } from "@/shared/lib/felt-temperature";
+import type { User } from "@/shared/api/user";
+import { personalComfortScore } from "@/shared/lib/comfort-score";
+import { apparentTemperature, personalFeltTemperature } from "@/shared/lib/felt-temperature";
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
@@ -28,6 +30,33 @@ export function heatHazard(tempC: number, humidityPct: number, windMs: number): 
   if (Number.isNaN(tempC)) return 0;
   const at = apparentTemperature(tempC, humidityPct, windMs);
   return clamp01(Math.abs(at - COMFORT_TEMP) / HEAT_SPAN);
+}
+
+/**
+ * 개인화 열 스트레스 0~1.
+ *
+ * - user 없음: 기존 일반식 |AT − 21| / 16 (heatHazard와 동일, fallback).
+ * - user 있음: 일반 열 스트레스와 종합 쾌적 점수(수분·체형·나이·활동량) 기반
+ *   위험도를 50:50으로 블렌딩한다. 상단 요약 패널(personalization.ts)의
+ *   temp 카드(heatLevel*45 + comfortRisk*45)와 동일한 비율이라 지도·카드가 일관된다.
+ *
+ * 밴드(추움/적당/더움)는 개인 체감온도로 결정되므로 같은 날씨라도 사용자별로 값이 달라진다.
+ */
+export function personalHeatHazard(
+  tempC: number,
+  humidityPct: number,
+  windMs: number,
+  user?: User | null,
+): number {
+  if (Number.isNaN(tempC)) return 0;
+  const at = apparentTemperature(tempC, humidityPct, windMs);
+  const generic = clamp01(Math.abs(at - COMFORT_TEMP) / HEAT_SPAN);
+  if (!user) return generic;
+
+  const felt = personalFeltTemperature(at, user); // 개인 체감온도
+  const comfort = personalComfortScore(user, felt); // 종합 쾌적 점수 (0~100, 높을수록 쾌적)
+  const comfortRisk = clamp01((100 - comfort.score) / 100); // 쾌적↑ → 위험↓
+  return clamp01(0.5 * generic + 0.5 * comfortRisk);
 }
 
 /** 자외선 지수(0~11) → 0~1 위험도. */

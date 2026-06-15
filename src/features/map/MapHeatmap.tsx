@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { FeatureCollection, Point } from "geojson";
+import { AlertCircle } from "lucide-react";
 import mapboxgl from "mapbox-gl";
 
 import "mapbox-gl/mapbox-gl.css";
@@ -103,6 +104,7 @@ type MapHeatmapProps = {
   userCoords?: [number, number] | null;
   locating?: boolean;
   dataLoading?: boolean;
+  dataUnavailable?: boolean;
 };
 
 export default function MapHeatmap({
@@ -114,6 +116,7 @@ export default function MapHeatmap({
   userCoords,
   locating = false,
   dataLoading = false,
+  dataUnavailable = false,
 }: MapHeatmapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -143,7 +146,8 @@ export default function MapHeatmap({
       maxZoom: 13,
       maxBounds: koreaBounds,
       attributionControl: false,
-      logoPosition: "bottom-left",
+      // 로고를 우측 상단으로 보내 히트맵 범례(right-2 top-2, 불투명 흰 배경) 뒤에 가려지게 한다.
+      logoPosition: "top-right",
     });
 
     mapRef.current = map;
@@ -263,6 +267,15 @@ export default function MapHeatmap({
           <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-medium text-gray-dark shadow-marker">
             <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             {locating ? "현재 위치를 불러오는 중…" : "날씨 데이터를 불러오는 중…"}
+          </div>
+        </div>
+      ) : null}
+      {!locating && !dataLoading && dataUnavailable ? (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
+          <div className="flex max-w-xs flex-col items-center gap-1.5 rounded-xl bg-white/90 px-5 py-4 text-center shadow-marker backdrop-blur-sm">
+            <AlertCircle className="h-5 w-5 text-gray-dark" />
+            <p className="text-sm font-medium text-app-black">데이터를 불러올 수 없어요</p>
+            <p className="text-xs text-gray-dark">외부 API 호출 한도를 초과했어요. 잠시 후 다시 시도해 주세요.</p>
           </div>
         </div>
       ) : null}

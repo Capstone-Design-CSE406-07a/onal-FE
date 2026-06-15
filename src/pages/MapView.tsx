@@ -44,9 +44,12 @@ export default function MapView() {
   // 모든 레이어 데이터를 진입 시 한 번에 선로딩한다. 각 nationwide 호출은 백엔드가
   // 격자 단위로 KMA를 병렬 호출 + 5분 캐싱하는 일괄 엔드포인트라 요청 1건씩이면 충분하고,
   // 프런트도 영구 캐시하므로 레이어 전환이 즉시 이뤄져 빈 화면 이탈을 막는다.
-  const { data: pmData } = usePmNationwide(true);
-  const { data: tempWindData } = useTempWindNationwide(true);
-  const { data: uvData } = useUvNationwide(true);
+  const pmQuery = usePmNationwide(true);
+  const tempWindQuery = useTempWindNationwide(true);
+  const uvQuery = useUvNationwide(true);
+  const pmData = pmQuery.data;
+  const tempWindData = tempWindQuery.data;
+  const uvData = uvQuery.data;
 
   const weatherInput = useMemo(
     () => ({
@@ -75,8 +78,20 @@ export default function MapView() {
     return undefined;
   }, [activeLayer, pmData, tempWindData, uvData]);
 
-  // 활성 레이어 데이터가 준비되기 전엔 가짜 데이터 대신 로딩 화면을 띄운다.
-  const heatmapLoading = geoJsonData === undefined;
+  // 활성 레이어 데이터가 준비되기 전엔 로딩 화면을 띄우되, 재시도까지 모두 실패(429 등)해
+  // 쿼리가 에러로 끝나면 로딩을 거두고 빈 히트맵을 보여준다(무한 로딩 방지).
+  const heatmapLoading = useMemo(() => {
+    if (geoJsonData !== undefined) return false;
+    if (activeLayer === "air") return pmQuery.isPending;
+    if (activeLayer === "temp" || activeLayer === "rain") return tempWindQuery.isPending;
+    if (activeLayer === "uv") return uvQuery.isPending;
+    // risk: 셋 중 하나라도 아직 받는 중이면 로딩
+    return pmQuery.isPending || tempWindQuery.isPending || uvQuery.isPending;
+  }, [geoJsonData, activeLayer, pmQuery.isPending, tempWindQuery.isPending, uvQuery.isPending]);
+
+  // 로딩도 아닌데 데이터가 없으면 = 외부 API 한도 초과 등으로 못 받은 상태.
+  // (pm 429 시 대기질·복합 위험도가 여기 해당) → 빈 지도 대신 안내를 띄운다.
+  const heatmapUnavailable = !heatmapLoading && geoJsonData === undefined;
 
   const personalizedData = useMemo(
     () => buildPersonalizedMapData(user, timeOffset, weatherInput),
@@ -102,6 +117,7 @@ export default function MapView() {
             userCoords={userCoords}
             locating={locationStatus === "locating"}
             dataLoading={heatmapLoading}
+            dataUnavailable={heatmapUnavailable}
           />
         </Suspense>
         <BottomControlsPanel

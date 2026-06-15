@@ -62,26 +62,32 @@ export function OnboardingContainer() {
   };
 
   return (
-    <div className="flex min-h-full w-full justify-center bg-app-bg">
-      <div className="flex w-full max-w-150 flex-col gap-6 px-4 py-8">
-        <OnboardingHeader step={step} />
-        <StepIndicator current={step} />
+    <div className="flex min-h-dvh w-full justify-center bg-app-bg">
+      <div className="flex min-h-dvh w-full max-w-150 flex-col">
+        {/* 스크롤되는 본문 — 내용이 길면 이 영역이 늘어나며 페이지가 스크롤된다. */}
+        <div className="flex flex-1 flex-col gap-6 px-4 pt-8 pb-6">
+          <OnboardingHeader step={step} />
+          <StepIndicator current={step} />
 
-        {step === 1 && (
-          <SensitiveGroupSelect value={sensitiveGroups} onChange={setSensitiveGroups} />
-        )}
-        {step === 2 && <ActivityTimeSelect value={activities} onChange={setActivities} />}
-        {step === 3 && <LocationsSelect value={locations} onChange={setLocations} />}
-        {step === 4 && <TemperatureSelect value={tempPreference} onChange={setTempPreference} />}
-        {step === 5 && <ScoreProfileSelect value={scoreProfile} onChange={setScoreProfile} />}
+          {step === 1 && (
+            <SensitiveGroupSelect value={sensitiveGroups} onChange={setSensitiveGroups} />
+          )}
+          {step === 2 && <ActivityTimeSelect value={activities} onChange={setActivities} />}
+          {step === 3 && <LocationsSelect value={locations} onChange={setLocations} />}
+          {step === 4 && <TemperatureSelect value={tempPreference} onChange={setTempPreference} />}
+          {step === 5 && <ScoreProfileSelect value={scoreProfile} onChange={setScoreProfile} />}
+        </div>
 
-        <OnboardingNav
-          onPrev={prev}
-          onNext={handleNext}
-          prevDisabled={isFirst}
-          nextDisabled={nextDisabled || submitMutation.isPending}
-          isLast={isLast}
-        />
+        {/* 항상 하단에 고정되는 푸터 — 내용이 짧으면 바닥에, 길면 스크롤해도 뷰포트 하단에 붙어 있다. */}
+        <div className="sticky bottom-0 bg-app-bg px-4 pt-4 pb-4 shadow-footer">
+          <OnboardingNav
+            onPrev={prev}
+            onNext={handleNext}
+            prevDisabled={isFirst}
+            nextDisabled={nextDisabled || submitMutation.isPending}
+            isLast={isLast}
+          />
+        </div>
       </div>
     </div>
   );

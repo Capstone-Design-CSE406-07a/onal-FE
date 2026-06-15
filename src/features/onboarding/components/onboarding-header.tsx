@@ -13,7 +13,7 @@ export function OnboardingHeader({ step }: OnboardingHeaderProps) {
     <div className="flex w-full flex-col gap-4">
       <div className="flex items-center justify-between">
         <Typography variant="h2" className="text-app-black">
-          환경 설정
+          온보딩
         </Typography>
         <Typography variant="body2" as="span" className="text-gray-dark">
           {step} / {TOTAL_STEPS}

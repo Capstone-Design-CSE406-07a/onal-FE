@@ -7,43 +7,43 @@
   --radius: 0.625rem;
 
   /* ─── Design tokens ─────────────────────────── */
-  --primary:            #BED3EE;
-  --primary-dark:       #B0C2D9;
+  --primary: #bed3ee;
+  --primary-dark: #b0c2d9;
   --primary-foreground: #1a3a52;
-  --accent-bg:          #E9F2FB;
-  --destructive:        #D4183D;
-  --gray-primary:       #ECECF0;
-  --gray-light:         #F3F3F5;
-  --gray-dark:          #717182;
-  --app-black:          #0A0A0A;
-  --app-white:          #FCFCFC;
-  --app-bg:             #F0F4FA;
-  --purple:             #DDB7D5;
-  --red:                #EF8181;
+  --accent-bg: #e9f2fb;
+  --destructive: #d4183d;
+  --gray-primary: #ececf0;
+  --gray-light: #f3f3f5;
+  --gray-dark: #717182;
+  --app-black: #0a0a0a;
+  --app-white: #fcfcfc;
+  --app-bg: #f0f4fa;
+  --purple: #ddb7d5;
+  --red: #ef8181;
 
   /* 체감온도 스케일(추움→더움). 중간/끝은 purple·red 토큰 재사용 */
-  --temp-cold:          #9ABDE9;
-  --temp-cool:          #B0BBE2;
-  --temp-mild:          #C7B9DC;
-  --temp-warm:          #E3A5B9;
-  --temp-hot:           #E9939D;
+  --temp-cold: #9abde9;
+  --temp-cool: #b0bbe2;
+  --temp-mild: #c7b9dc;
+  --temp-warm: #e3a5b9;
+  --temp-hot: #e9939d;
 
   /* ─── Shadcn UI compatibility ────────────────── */
-  --background:         #FCFCFC;
-  --foreground:         #0A0A0A;
-  --card:               #FCFCFC;
-  --card-foreground:    #0A0A0A;
-  --popover:            #FCFCFC;
-  --popover-foreground: #0A0A0A;
-  --secondary:          #ECECF0;
-  --secondary-foreground: #0A0A0A;
-  --muted:              #F3F3F5;
-  --muted-foreground:   #717182;
-  --accent:             #E9F2FB;
-  --accent-foreground:  #1a3a52;
-  --border:             #ECECF0;
-  --input:              #ECECF0;
-  --ring:               #BED3EE;
+  --background: #fcfcfc;
+  --foreground: #0a0a0a;
+  --card: #fcfcfc;
+  --card-foreground: #0a0a0a;
+  --popover: #fcfcfc;
+  --popover-foreground: #0a0a0a;
+  --secondary: #ececf0;
+  --secondary-foreground: #0a0a0a;
+  --muted: #f3f3f5;
+  --muted-foreground: #717182;
+  --accent: #e9f2fb;
+  --accent-foreground: #1a3a52;
+  --border: #ececf0;
+  --input: #ececf0;
+  --ring: #bed3ee;
 }
 
 .dark {
@@ -74,48 +74,50 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   /* Shadcn UI */
-  --color-background:         var(--background);
-  --color-foreground:         var(--foreground);
-  --color-card:               var(--card);
-  --color-card-foreground:    var(--card-foreground);
-  --color-popover:            var(--popover);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-secondary:          var(--secondary);
+  --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted:              var(--muted);
-  --color-muted-foreground:   var(--muted-foreground);
-  --color-border:             var(--border);
-  --color-input:              var(--input);
-  --color-ring:               var(--ring);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
   /* Design tokens
    * primary-light  → bg-primary/10
    * accent-light   → bg-accent/50
    * destructive-light → bg-destructive/10
    */
-  --color-primary:            var(--primary);
-  --color-primary-dark:       var(--primary-dark);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
   --color-primary-foreground: var(--primary-foreground);
-  --color-accent:             var(--accent);
-  --color-accent-foreground:  var(--accent-foreground);
-  --color-destructive:        var(--destructive);
-  --color-gray-primary:       var(--gray-primary);
-  --color-gray-light:         var(--gray-light);
-  --color-gray-dark:          var(--gray-dark);
-  --color-app-black:          var(--app-black);
-  --color-app-white:          var(--app-white);
-  --color-app-bg:             var(--app-bg);
-  --color-purple:             var(--purple);
-  --color-red:                var(--red);
-  --color-temp-cold:          var(--temp-cold);
-  --color-temp-cool:          var(--temp-cool);
-  --color-temp-mild:          var(--temp-mild);
-  --color-temp-warm:          var(--temp-warm);
-  --color-temp-hot:           var(--temp-hot);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-gray-primary: var(--gray-primary);
+  --color-gray-light: var(--gray-light);
+  --color-gray-dark: var(--gray-dark);
+  --color-app-black: var(--app-black);
+  --color-app-white: var(--app-white);
+  --color-app-bg: var(--app-bg);
+  --color-purple: var(--purple);
+  --color-red: var(--red);
+  --color-temp-cold: var(--temp-cold);
+  --color-temp-cool: var(--temp-cool);
+  --color-temp-mild: var(--temp-mild);
+  --color-temp-warm: var(--temp-warm);
+  --color-temp-hot: var(--temp-hot);
 
   /* 핀/카드 그림자 */
-  --shadow-marker:        0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-marker: 0 1px 3px rgba(0, 0, 0, 0.12);
   --shadow-marker-active: 0 1px 3px rgba(0, 0, 0, 0.2);
+  /* 하단 고정 푸터 위쪽 그림자 — 스크롤 가능함을 암시 */
+  --shadow-footer: 0 -4px 12px rgba(0, 0, 0, 0.2);
 }
 
 @layer base {
@@ -127,10 +129,14 @@
   body,
   #root {
     @apply m-0 min-h-full p-0;
-    font-family: "Pretendard", system-ui, -apple-system, sans-serif;
+    font-family:
+      "Pretendard",
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
   body {
-    @apply bg-white text-foreground;
+    @apply text-foreground bg-white;
   }
   #root {
     @apply mx-auto w-full max-w-[600px] bg-white;
